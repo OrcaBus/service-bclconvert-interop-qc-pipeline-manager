@@ -9,7 +9,7 @@ export class StatelessStack extends cdk.Stack {
 
     new DeploymentStackPipeline(this, 'DeploymentPipeline', {
       githubBranch: 'main',
-      githubRepo: /** TODO: Replace with string. Example: */ 'service-microservice-manager',
+      githubRepo: /** TODO: Replace with string. Exam#!ple: */ 'service-microservice-manager',
       stack: /** TODO: Replace with Stack (e.g. TheStatelessStack) */ undefined as unknown,
       stackName: /** TODO: Replace with string. Example: */ 'StatelessMicroserviceManager',
       stackConfig: {
