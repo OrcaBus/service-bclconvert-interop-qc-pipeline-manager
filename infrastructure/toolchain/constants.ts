@@ -1,1 +1,1 @@
-export const REPO_NAME = 'service-bclconvert-interop-qc-pipeline-manager'
+export const REPO_NAME = 'service-bclconvert-interop-qc-pipeline-manager';

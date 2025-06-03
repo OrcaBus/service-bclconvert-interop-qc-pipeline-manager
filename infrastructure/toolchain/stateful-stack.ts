@@ -1,24 +1,25 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { DeploymentStackPipeline } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
-import { getStackProps } from '../stage/config';
-import {REPO_NAME} from "./constants";
+import { getStatefulStackProps } from '../stage/config';
+import { REPO_NAME } from './constants';
+import { StatefulApplicationStack } from '../stage/stateful-application-stack';
 
 export class StatefulStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new DeploymentStackPipeline(this, 'DeploymentPipeline', {
+    new DeploymentStackPipeline(this, 'StatefulDeploymentPipeline', {
       githubBranch: 'main',
       githubRepo: REPO_NAME,
-      stack: /** TODO: Replace with Stack (e.g. TheServiceStateFULStack) */ undefined as unknown,
-      stackName: /** TODO: Replace with string. THIS ONE ALSO MATTERS Example:  */ 'StatefulMicroserviceManager',
+      stack: StatefulApplicationStack,
+      stackName: 'OrcaBus-BclconvertInteropQc-StatefulMicroservice',
       stackConfig: {
-        beta: getStackProps('BETA'),
-        gamma: getStackProps('GAMMA'),
-        prod: getStackProps('PROD'),
+        beta: getStatefulStackProps('BETA'),
+        gamma: getStatefulStackProps('GAMMA'),
+        prod: getStatefulStackProps('PROD'),
       },
-      pipelineName: /** TODO: Replace with string. THIS ONE MATTERS Example: */ 'OrcaBus-StatefulMicroservice',
+      pipelineName: 'OrcaBus-BclconvertInterOpQc-StatefulMicroserviceDeployment',
       cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateful synth'],
     });
   }
