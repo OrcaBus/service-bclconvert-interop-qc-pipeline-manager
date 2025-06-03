@@ -8,28 +8,36 @@ The BCLConvert InterOp QC Manager performs the following tasks:
   and convert to BCLConvert InterOp QC Manager READY events, that are then relayed by the workflow manager.
 
 * Listen to BCLConvert InterOp QC Manager READY events from the workflow manager,
-  and convert these into ICAv2 WES Events, for launch of the BCLConvert InterOp QC Manager workflow on ICAv2. 
+  and convert these into ICAv2 WES Events, for launch of the BCLConvert InterOp QC Manager workflow on ICAv2.
 
-* Listen to events from the ICAv2 WES Manager, and convert these into Workflow Run State Change events for the workflow manager.
-
+* Listen to events from the ICAv2 WES Manager, and convert these into Workflow Run State Change events for the workflow
+  manager.
 
 ## Project Structure :construction:
 
 The project is organized into the following key directories:
 
-- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the application should run independently.
+- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the
+  application should run independently.
 
-- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and `stateful`. You can remove one of these if your service does not require it.
+- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and
+  `stateful`. You can remove one of these if your service does not require it.
 
 - **`./infrastructure`**: Contains the infrastructure code for the project:
-  - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
-  - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
-    - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`, `gamma`, `prod`).
-    - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the application in `./app`.
+    - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the
+      toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
+    - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
+        - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`,
+          `gamma`, `prod`).
+        - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the
+          application in `./app`.
 
-- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the tests are properly configured for your environment.
+- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code
+  style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the
+  tests are properly configured for your environment.
 
-- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match the resources defined in the `./infrastructure` folder.
+- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match
+  the resources defined in the `./infrastructure` folder.
 
 ## Events Diagram overview
 
@@ -39,7 +47,8 @@ The project is organized into the following key directories:
 
 ### BSSH Fastq to AWS S3 Copy Succeeded Event to BCLConvert InterOp QC Manager READY Event
 
-Listen to the BSSH Fastq to AWS S3 Copy Succeeded Event from the workflow manager, and convert it to a BCLConvert InterOp QC Manager READY event. 
+Listen to the BSSH Fastq to AWS S3 Copy Succeeded Event from the workflow manager, and convert it to a BCLConvert
+InterOp QC Manager READY event.
 This event is then relayed by the workflow manager.
 
 <details>
@@ -49,24 +58,24 @@ This event is then relayed by the workflow manager.
 ```json5
 {
   // Name of the event bus
-  "EventBusName": "OrcaBusMain",  
+  "EventBusName": "OrcaBusMain",
   // Workflow Manager event type
   "DetailType": "WorkflowRunStateChange",
-  // Event relayed by the workflow manager  
-  "Source": "orcabus.workflowmanager",  
+  // Event relayed by the workflow manager
+  "Source": "orcabus.workflowmanager",
   "Detail": {
     // Workflow run status
-    "status": "SUCCEEDED",  
+    "status": "SUCCEEDED",
     // Timestamp of the event
     "timestamp": "2025-04-22T00:09:07.220Z",
-    // Portal Run ID For the BSSH Fastq Copy Manager  
+    // Portal Run ID For the BSSH Fastq Copy Manager
     "portalRunId": "202504179cac7411",  // pragma: allowlist secret
     // Workflow name
     "workflowName": "bssh-fastq-to-aws-copy",
-    // Workflow version  
-    "workflowVersion": "2025.05.14",  
+    // Workflow version
+    "workflowVersion": "2025.05.14",
     // Workflow run name
-    "workflowRunName": "umccr--automated--bssh-fastq-to-aws-copy--2024-05-24--202504179cac7411",  
+    "workflowRunName": "umccr--automated--bssh-fastq-to-aws-copy--2024-05-24--202504179cac7411",
     // Linked libraries in the instrument run
     "linkedLibraries": [
       {
@@ -114,24 +123,24 @@ And in turn we generate the following
 ```json5
 {
   // Name of the event bus
-  "EventBusName": "OrcaBusMain",  
+  "EventBusName": "OrcaBusMain",
   // Workflow Manager event type
   "DetailType": "WorkflowRunStateChange",
-  // Event relayed by the workflow manager  
-  "Source": "orcabus.workflowmanager",  
+  // Event relayed by the workflow manager
+  "Source": "orcabus.workflowmanager",
   "Detail": {
     // Workflow run status
-    "status": "READY",  
+    "status": "READY",
     // Timestamp of the event
     "timestamp": "2025-04-22T00:09:07.220Z",
-    // Portal Run ID For the BSSH Fastq Copy Manager  
+    // Portal Run ID For the BSSH Fastq Copy Manager
     "portalRunId": "20250417abcd1234",  // pragma: allowlist secret
     // Workflow name
     "workflowName": "bclconvert-interop-qc",
-    // Workflow version  
-    "workflowVersion": "2025.05.24",  
+    // Workflow version
+    "workflowVersion": "2025.05.24",
     // Workflow run name
-    "workflowRunName": "umccr--automated--bclconvert-interop-qc--2024-05-24--20250417abcd1234",  
+    "workflowRunName": "umccr--automated--bclconvert-interop-qc--2024-05-24--20250417abcd1234",
     // Linked libraries in the instrument run
     "linkedLibraries": [
       {
@@ -174,9 +183,10 @@ And in turn we generate the following
 
 ### BCLConvert InterOp QC Manager READY Event to ICAv2 WES Event
 
-We listen to the BCLConvert InterOp QC Manager READY event from the workflow manager, and convert it into an ICAv2 WES Event.
+We listen to the BCLConvert InterOp QC Manager READY event from the workflow manager, and convert it into an ICAv2 WES
+Event.
 
-The details of the READY event are shown above. 
+The details of the READY event are shown above.
 
 For the ICAv2 WES Event, we generate the following:
 
@@ -184,14 +194,13 @@ For the ICAv2 WES Event, we generate the following:
 
 <summary>Click to expand!</summary>
 
-
 ```json5
 {
   // Name of the event bus
-  "EventBusName": "OrcaBusMain",  
+  "EventBusName": "OrcaBusMain",
   // ICAv2 WES event type
   "DetailType": "Icav2WesAnalysisRequest",
-  // Event relayed by the workflow manager  
+  // Event relayed by the workflow manager
   "Source": "orcabus.bclconvertinteropqcmanager",
   "Detail": {
     // The workflow run name
@@ -230,12 +239,13 @@ For the ICAv2 WES Event, we generate the following:
   }
 }
 ```
-</details>
 
+</details>
 
 ### ICAv2 WES Event to Workflow Run State Change Event
 
-Now we listen to events from the ICAv2 WES Manager, and convert these into Workflow Run State Change events for the workflow manager.
+Now we listen to events from the ICAv2 WES Manager, and convert these into Workflow Run State Change events for the
+workflow manager.
 
 An example might be something like this:
 
@@ -296,46 +306,67 @@ That we convert to a Workflow Run State Change event for the workflow manager, w
 ```json5
 {
   // Name of the event bus
-  "EventBusName": "OrcaBusMain",  
-  // ICAv2 WES event type
-  "DetailType": "Icav2WesAnalysisRequest",
-  // Event relayed by the workflow manager  
-  "Source": "orcabus.bclconvertinteropqcmanager",
+  "EventBusName": "OrcaBusMain",
+  // Workflow Manager event type
+  "DetailType": "WorkflowRunStateChange",
+  // Event relayed by the workflow manager
+  "Source": "orcabus.workflowmanager",
   "Detail": {
-    // The workflow run name
-    // Which we use to query the workflow manager for the existing payload
-    "name": "umccr--automated--bclconvert-interop-qc--2024-05-24--20250417abcd1234",
-    // Inputs from the existing workflow manager state
-    "inputs": {
-      // The instrument run ID is used to identify the BCLConvert InterOp QC Manager workflow
-      // We get this from the BSSH Fastq To AWS S3 Copy Succeeded Event payload.data.inputs.instrumentRunId
-      "instrumentRunId": "20231010_pi1-07_0329_A222N7LTD3",
-      // InterOp Directory
-      // Collected from the payload.data.outputs.outputUri + 'InterOp/'
-      "interOpDirectory": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/20231010_pi1-07_0329_A222N7LTD3/202504179cac7411/InterOp/",
-      // BCLConvert Report Directory
-      // Collected from the payload.data.outputs.outputUri + 'Reports/'
-      "bclConvertReportDirectory": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/20231010_pi1-07_0329_A222N7LTD3/202504179cac7411/Reports/"
-    },
-    // The engine parameters are used to launch the BCLConvert InterOp QC Manager workflow on ICAv2
-    "engineParameters": {
-      // The output URI is used to identify the BCLConvert InterOp QC Manager workflow
-      "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/bclconvert-interop-qc/20250417abcd1234/",
-      // This is where the ICA Logs will be stored
-      "logsUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/logs/bclconvert-interop-qc/20250417abcd1234/",
-      // The ICAv2 Project ID we use to launch the workflow
-      // We get this from the icav2 wes engine parameters
-      "projectId": "uuid4",
-      // We get this from the icav2 wes engine parameters
-      "pipelineId": "uuid4",
-      // If the icav2 analysis id has been set, we can include it here
-      "analysisId": "uuid4",
-      // We also return with the icav2 wes analysis orcabus id
-      "icav2WesAnalysisOrcaBusId": "iwa.01JWAGE5PWS5JN48VWNPYSTJRN",
-    },
-    // Tags as provided in the existing workflow manager state
-    "tags": {
-     "instrumentRunId": "20231010_pi1-07_0329_A222N7LTD3"
+    // Workflow run status
+    "status": "RUNNING",
+    // Timestamp of the event
+    "timestamp": "2025-04-22T00:09:07.220Z",
+    // Portal Run ID For the BSSH Fastq Copy Manager
+    "portalRunId": "20250417abcd1234",  // pragma: allowlist secret
+    // Workflow name
+    "workflowName": "bclconvert-interop-qc",
+    // Workflow version
+    "workflowVersion": "2025.05.24",
+    // Workflow run name
+    "workflowRunName": "umccr--automated--bclconvert-interop-qc--2024-05-24--20250417abcd1234",
+    // Linked libraries in the instrument run
+    "linkedLibraries": [
+      {
+        "orcabusId": "lib.12345",
+        "libraryId": "L20202020"
+      }
+    ],
+    "payload": {
+      "refId": "workflowmanagerrefid",
+      "version": "2024.07.01",
+      "data": {
+        // Original inputs from READY State
+        "inputs": {
+          // The instrument run ID is used to identify the BCLConvert InterOp QC Manager workflow
+          // We get this from the BSSH Fastq To AWS S3 Copy Succeeded Event payload.data.inputs.instrumentRunId
+          "instrumentRunId": "20231010_pi1-07_0329_A222N7LTD3",
+          // InterOp Directory
+          // Collected from the payload.data.outputs.outputUri + 'InterOp/'
+          "interOpDirectory": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/20231010_pi1-07_0329_A222N7LTD3/202504179cac7411/InterOp/",
+          // BCLConvert Report Directory
+          // Collected from the payload.data.outputs.outputUri + 'Reports/'
+          "bclConvertReportDirectory": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/20231010_pi1-07_0329_A222N7LTD3/202504179cac7411/Reports/"
+        },
+        // The engine parameters are used to launch the BCLConvert InterOp QC Manager workflow on ICAv2
+        "engineParameters": {
+          // The output URI is used to identify the BCLConvert InterOp QC Manager workflow
+          "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/bclconvert-interop-qc/20250417abcd1234/",
+          // This is where the ICA Logs will be stored
+          "logsUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/logs/bclconvert-interop-qc/20250417abcd1234/",
+          // The ICAv2 Project ID we use to launch the workflow
+          "projectId": "uuid4",
+          // Pipeline Id
+          "pipelineId": "uuid4",
+          // ICAv2 Analysis Id
+          "analysisId": "uuid4",
+          // The ICAv2 WES Analysis OrcaBus ID
+          "icav2WesAnalysisOrcaBusId": "iwa.01JWAGE5PWS5JN48VWNPYSTJRN"
+        },
+        // Tags (same as bssh fastq to aws s3 copy succeeded event)
+        "tags": {
+         "instrumentRunId": "20231010_pi1-07_0329_A222N7LTD3"
+        }
+      }
     }
   }
 }
@@ -369,7 +400,8 @@ make install
 
 ### First Steps :construction:
 
-Before using this template, search for all instances of `TODO:` comments in the codebase and update them as appropriate for your service. This includes replacing placeholder values (such as stack names).
+Before using this template, search for all instances of `TODO:` comments in the codebase and update them as appropriate
+for your service. This includes replacing placeholder values (such as stack names).
 
 ### CDK Commands :construction:
 
@@ -377,10 +409,13 @@ You can access CDK commands using the `pnpm` wrapper script.
 
 This template provides two types of CDK entry points: `cdk-stateless` and `cdk-stateful`.
 
-- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily redeployed without side effects.
-- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where redeployment may not be ideal due to potential side effects.
+- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily
+  redeployed without side effects.
+- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where
+  redeployment may not be ideal due to potential side effects.
 
-The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct stack is executed based on the provided context.
+The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct
+stack is executed based on the provided context.
 
 For example:
 
@@ -394,7 +429,9 @@ pnpm cdk-stateful <command>
 
 ### Stacks
 
-This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`, `gamma`, and `prod`.
+This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its
+stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`,
+`gamma`, and `prod`.
 
 To list all available stacks, run:
 
