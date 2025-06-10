@@ -9,7 +9,7 @@ export class StatefulStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new DeploymentStackPipeline(this, 'StatefulDeploymentPipeline', {
+    new DeploymentStackPipeline(this, 'OrcaBusStatefulBclConvertInteropQcStack', {
       githubBranch: 'main',
       githubRepo: REPO_NAME,
       stack: StatefulApplicationStack,

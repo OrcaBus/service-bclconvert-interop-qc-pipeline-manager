@@ -47,8 +47,8 @@
         }
       ],
       "Output": {
-        "defaultProjectId": "{% $states.result.[0].defaultProjectId %}",
-        "defaultPipelineId": "{% $states.result.[1].defaultProjectId %}"
+        "defaultProjectId": "{% $states.result[0].defaultProjectId %}",
+        "defaultPipelineId": "{% $states.result[1].defaultPipelineId %}"
       }
     },
     "Convert BCLConvert Ready Event to ICAv2 WES Event": {
