@@ -1,10 +1,4 @@
 import {
-  icav2ProjectId,
-  pipelineCacheBucket,
-  pipelineCachePrefix,
-  StageName,
-} from '@orcabus/platform-cdk-constructs/utils';
-import {
   PAYLOAD_VERSION,
   SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
   SSM_PARAMETER_PATH_LOGS_PREFIX,
@@ -26,6 +20,12 @@ import {
   SSM_PARAMETER_PATH_PREFIX,
 } from './constants';
 import { StatefulApplicationStackConfig, StatelessApplicationStackConfig } from './interfaces';
+import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
+import { icav2ProjectId } from '@orcabus/platform-cdk-constructs/shared-config/icav2';
+import {
+  pipelineCacheBucket,
+  pipelineCachePrefix,
+} from '@orcabus/platform-cdk-constructs/shared-config/s3';
 
 /**
  * Stateful stack properties for the workflow.

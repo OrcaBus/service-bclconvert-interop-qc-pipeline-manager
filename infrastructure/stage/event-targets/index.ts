@@ -80,11 +80,11 @@ export function buildAllEventBridgeTargets(scope: Construct, props: EventBridgeT
       case 'icav2WesAnalysisStateChangeEventToWrscSfnTarget': {
         buildIcav2WesEventStateChangeToWrscSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'bclconvertInteropQcReady'
+            (eventBridgeObject) =>
+              eventBridgeObject.ruleName === 'bclconvertInteropQcIcav2WesAnalysisStateChange'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.stateMachineName === 'bclconvertInteropqcReadyToIcav2WesSubmitted'
+            (eventBridgeObject) => eventBridgeObject.stateMachineName === 'icav2WesEventToWrscEvent'
           )?.sfnObject,
         });
         break;

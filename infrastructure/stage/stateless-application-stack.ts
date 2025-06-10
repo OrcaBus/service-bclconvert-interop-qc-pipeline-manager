@@ -6,6 +6,7 @@ import { buildAllStepFunctions } from './step-functions';
 import { StatelessApplicationStackConfig } from './interfaces';
 import { buildAllEventRules } from './event-rules';
 import { buildAllEventBridgeTargets } from './event-targets';
+import { NagSuppressions } from 'cdk-nag';
 
 export type StatelessApplicationStackProps = cdk.StackProps & StatelessApplicationStackConfig;
 
@@ -44,5 +45,14 @@ export class StatelessApplicationStack extends cdk.Stack {
       eventBridgeRuleObjects: eventRules,
       stepFunctionObjects: stateMachines,
     });
+
+    // Add in stack suppressions
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM4',
+        reason:
+          'We use the standard AWS Lambda execution role, which is not specific to this stack.',
+      },
+    ]);
   }
 }
