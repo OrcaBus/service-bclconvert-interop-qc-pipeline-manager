@@ -11,8 +11,6 @@ export class StatefulApplicationStack extends cdk.Stack {
 
     /**
      * Define your stack to be deployed in stages here
-     *
-     * TODO: Rename the class to match the service name and stateless/stateful stack
      */
 
     // Workflow name
