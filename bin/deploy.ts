@@ -13,11 +13,11 @@ if (!deployMode) {
 }
 
 if (deployMode === 'stateless') {
-  new StatelessStack(app, 'OrcaBusStatelessBclConvertInteropQcStack', {
+  new StatelessStack(app, 'StatelessBclConvertInteropQcStack', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else if (deployMode === 'stateful') {
-  new StatefulStack(app, 'OrcaBusStatefulBclConvertInteropQcStack', {
+  new StatefulStack(app, 'StatefulBclConvertInteropQcStack', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else {
