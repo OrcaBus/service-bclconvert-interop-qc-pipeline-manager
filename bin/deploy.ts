@@ -13,11 +13,11 @@ if (!deployMode) {
 }
 
 if (deployMode === 'stateless') {
-  new StatelessStack(app, 'StatelessBclConvertInteropQcStack', {
+  new StatelessStack(app, 'StatelessBclConvertInteropQc', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else if (deployMode === 'stateful') {
-  new StatefulStack(app, 'StatefulBclConvertInteropQcStack', {
+  new StatefulStack(app, 'StatefulBclConvertInteropQc', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else {
