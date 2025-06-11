@@ -21,6 +21,7 @@ export class StatelessStack extends cdk.Stack {
       },
       pipelineName: 'OrcaBus-BclconvertInteropQc-StatelessMicroserviceDeployment',
       cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateless synth'],
+      enableSlackNotification: false,
     });
   }
 }
