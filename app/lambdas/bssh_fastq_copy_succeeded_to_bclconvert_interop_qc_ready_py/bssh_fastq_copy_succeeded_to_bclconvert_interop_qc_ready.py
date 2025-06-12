@@ -98,8 +98,8 @@ def handler(event, context) -> Dict[str, Dict[str, Any]]:
     instrument_run_id = event["instrumentRunId"]
     primary_data_output_uri = event["primaryDataOutputUri"]
     linked_libraries = event["linkedLibraries"]
-    workflow_output_uri_prefix = event["workflowOutputUriPrefix"]
-    workflow_logs_uri_prefix = event["workflowLogsUriPrefix"]
+    workflow_output_uri_prefix = event["workflowOutputPrefix"]
+    workflow_logs_uri_prefix = event["workflowLogsPrefix"]
 
     # Construct the output payload
     return {

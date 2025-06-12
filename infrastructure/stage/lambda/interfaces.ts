@@ -19,6 +19,7 @@ export const lambdaNameList: LambdaNameList[] = [
 // Requirements interface for Lambda functions
 export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
+  needsWorkflowEnvVars?: boolean;
 }
 
 // Lambda requirements mapping
@@ -28,7 +29,7 @@ export const lambdaRequirementsMap: Record<LambdaNameList, LambdaRequirements> =
   // Needs Orcabus API tools to fetch the existing workflow run state
   convertIcav2WesStateChangeEventToWrscEvent: { needsOrcabusApiTools: true },
   // Needs Orcabus API tools to generate the workflow run name and portal run ID
-  generateWorkflowRunNameAndPortalRunId: { needsOrcabusApiTools: true },
+  generateWorkflowRunNameAndPortalRunId: { needsOrcabusApiTools: true, needsWorkflowEnvVars: true },
 };
 
 export interface LambdaInput {
