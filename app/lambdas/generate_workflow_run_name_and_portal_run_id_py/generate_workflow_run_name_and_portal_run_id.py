@@ -4,12 +4,16 @@
 Generate a workflow run name and portal run ID
 """
 
+# Standard library imports
+from os import environ
+from typing import Dict
+
+# Platform imports
 from orcabus_api_tools.workflow import (
     create_portal_run_id,
     create_workflow_run_name_from_workflow_name_workflow_version_and_portal_run_id
 )
-from os import environ
-from typing import Dict
+
 
 def handler(event, context) -> Dict[str, str]:
     """

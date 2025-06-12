@@ -9,8 +9,8 @@ export const WORKFLOW_NAME = 'bclconvert-interop-qc';
 export const WORKFLOW_VERSION = '1.3.1--1.25.2';
 export const PAYLOAD_VERSION = '2025.05.29';
 
-export const WORKFLOW_LOGS_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}/logs/${WORKFLOW_NAME}/`;
-export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}/analysis/${WORKFLOW_NAME}/`;
+export const WORKFLOW_LOGS_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}logs/${WORKFLOW_NAME}/`;
+export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}analysis/${WORKFLOW_NAME}/`;
 
 /* We extend this every time we release a new version of the workflow */
 /* This is added into our SSM Parameter Store to allow us to map workflow versions to pipeline IDs */

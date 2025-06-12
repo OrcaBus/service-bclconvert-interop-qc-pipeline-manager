@@ -78,7 +78,7 @@
       ],
       "Next": "Push WES Event",
       "Output": {
-        "icav2WesRequestEventDetail": "{% $states.result.icav2WesRequestEventDetail %}"
+        "icav2WesRequestEventDetail": "{% $states.result.Payload.icav2WesRequestEventDetail %}"
       }
     },
     "Push WES Event": {

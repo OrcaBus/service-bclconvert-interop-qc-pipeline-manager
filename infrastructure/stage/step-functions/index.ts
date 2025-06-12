@@ -60,6 +60,10 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
       props.ssmParameterPaths.outputPrefix;
     definitionSubstitutions['__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__'] =
       props.ssmParameterPaths.prefixPipelineIdsByWorkflowVersion;
+    definitionSubstitutions['__workflow_logs_prefix_ssm_parameter_name__'] =
+      props.ssmParameterPaths.logsPrefix;
+    definitionSubstitutions['__get_payload_version_ssm_parameter_name__'] =
+      props.ssmParameterPaths.payloadVersion;
   }
 
   return definitionSubstitutions;

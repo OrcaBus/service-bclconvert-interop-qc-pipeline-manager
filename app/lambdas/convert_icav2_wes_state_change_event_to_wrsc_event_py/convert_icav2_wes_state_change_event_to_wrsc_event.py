@@ -108,6 +108,7 @@ from orcabus_api_tools.workflow import (
     get_latest_payload_from_workflow_run
 )
 
+
 def handler(event, context):
     """
     Perform the following steps:
@@ -130,8 +131,10 @@ def handler(event, context):
         outputs = {
             'interOpSummaryDir': output_uri + 'interop_summary_files/',
             'multiQcOutputDir': output_uri + 'multiqc/',
-            'multiQcHtmlReportUri': output_uri + 'multiqc/' + icav2_wes_event['tags']['instrumentRunId'] + '_multiqc_report.html',
-            'multiQcQlimsCsvReportUri': output_uri + icav2_wes_event['tags']['instrumentRunId'] + '_multiqc_bclconvert_summary_qlims.csv',
+            'multiQcHtmlReportUri': output_uri + 'multiqc/' + icav2_wes_event['tags'][
+                'instrumentRunId'] + '_multiqc_report.html',
+            'multiQcQlimsCsvReportUri': output_uri + icav2_wes_event['tags'][
+                'instrumentRunId'] + '_multiqc_bclconvert_summary_qlims.csv',
         }
     else:
         outputs = None
@@ -172,3 +175,49 @@ def handler(event, context):
             }
         }
     }
+
+
+# if __name__ == "__main__":
+#     import json
+#     from os import environ
+#
+#     environ['AWS_PROFILE'] = 'umccr-development'
+#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
+#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
+#
+#     print(json.dumps(
+#         handler({
+#             "icav2WesStateChangeEvent": {
+#                 "id": "iwa.01JXGN81ARC0R5631KPQN94V58",
+#                 "name": "umccr--automated--bclconvert-interop-qc--1-3-1--1-25-2--20250611b0ea58a5",
+#                 "inputs": {
+#                     "bclconvert_report_directory": {
+#                         "class": "Directory",
+#                         "location": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/241024_A00130_0336_BHW7MVDSXC/20250611c473883f/Reports/"
+#                     },
+#                     "instrument_run_id": "241024_A00130_0336_BHW7MVDSXC",
+#                     "interop_directory": {
+#                         "class": "Directory",
+#                         "location": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/241024_A00130_0336_BHW7MVDSXC/20250611c473883f/InterOp/"
+#                     }
+#                 },
+#                 "engineParameters": {
+#                     "pipelineId": "355dc03f-31a3-4162-a96f-f8f954b1f63e",
+#                     "projectId": "ea19a3f5-ec7c-4940-a474-c31cd91dbad4",
+#                     "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development//analysis/bclconvert-interop-qc/20250611b0ea58a5/",
+#                     "logsUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development//logs/bclconvert-interop-qc/20250611b0ea58a5/"
+#                 },
+#                 "tags": {
+#                     "portalRunId": "20250611b0ea58a5",  # pragma: allowlist secret
+#                     "instrumentRunId": "241024_A00130_0336_BHW7MVDSXC"
+#                 },
+#                 "status": "STARTING",
+#                 "submissionTime": "2025-06-11T23:29:45.816068",
+#                 "stepsLaunchExecutionArn": "arn:aws:states:ap-southeast-2:843407916570:execution:icav2-wes-launchIcav2Analysis:f4f005d1-9e75-4d6c-b22f-b73354ee41f9",
+#                 "icav2AnalysisId": "25d6a779-420e-4181-aea5-437e06855772",
+#                 "startTime": "2025-06-11T23:29:46.057427+00:00",
+#                 "endTime": None
+#             }
+#         }, None),
+#         indent=4
+#     ))

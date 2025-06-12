@@ -108,7 +108,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Arguments": {
-        "FunctionName": "${__generate_workflow_run_name_and_portal_run_id_lambda_function_arn}",
+        "FunctionName": "${__generate_workflow_run_name_and_portal_run_id_lambda_function_arn__}",
         "Payload": {
           "workflowName": "{% $workflowName %}",
           "workflowVersion": "{% $workflowVersion %}"
@@ -178,7 +178,7 @@
         "Entries": [
           {
             "Detail": "{% $states.input.bclconvertInterOpQcEventDetail %}",
-            "DetailType": "${__workflow_run_state_change_detail__}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__event_source__}"
           }
