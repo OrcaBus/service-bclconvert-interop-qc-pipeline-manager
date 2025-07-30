@@ -14,7 +14,7 @@ describe('cdk-nag-stateless-toolchain-stack', () => {
   // You should configure all stack (sateless, stateful) to be tested
   const deployStack = new StatelessApplicationStack(app, 'DeployStack', {
     // Pick the prod environment to test as it is the most strict
-    ...getStatelessStackProps(),
+    ...getStatelessStackProps('PROD'),
   });
 
   Aspects.of(deployStack).add(new AwsSolutionsChecks());

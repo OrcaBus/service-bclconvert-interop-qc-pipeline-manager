@@ -20,7 +20,7 @@ import {
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
 } from '../constants';
 import { Construct } from 'constructs';
-import { camelCaseToSnakeCase } from '../utils';
+import { camelCaseToSnakeCase, withStackPrefix } from '../utils';
 
 function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps): {
   [key: string]: string;
@@ -47,6 +47,8 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
       WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE;
     definitionSubstitutions['__event_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__icav2_wes_request_detail_type__'] = ICAV2_WES_REQUEST_DETAIL_TYPE;
+    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
+      props.isNewWorkflowManagerDeployed.toString();
   }
 
   if (sfnRequirements.needsSsmParameterStoreAccess) {
@@ -117,7 +119,7 @@ function buildStepFunction(scope: Construct, props: BuildStepFunctionProps): Ste
 
   /* Create the state machine definition substitutions */
   const stateMachine = new sfn.StateMachine(scope, props.stateMachineName, {
-    stateMachineName: `bcl-interop-qc-${props.stateMachineName}`,
+    stateMachineName: withStackPrefix(props.stateMachineName),
     definitionBody: sfn.DefinitionBody.fromFile(
       path.join(STEP_FUNCTIONS_DIR, sfnNameToSnakeCase + `_sfn_template.asl.json`)
     ),
@@ -168,6 +170,7 @@ export function buildAllStepFunctions(
         lambdaObjects: props.lambdaObjects,
         eventBus: props.eventBus,
         ssmParameterPaths: props.ssmParameterPaths,
+        isNewWorkflowManagerDeployed: props.isNewWorkflowManagerDeployed,
       })
     );
   }

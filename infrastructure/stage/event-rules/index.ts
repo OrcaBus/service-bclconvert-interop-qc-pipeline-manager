@@ -21,6 +21,7 @@ import {
   WORKFLOW_NAME,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
 } from '../constants';
+import { withStackPrefix } from '../utils';
 
 /*
 https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-pattern-operators.html
@@ -40,12 +41,25 @@ function buildIcav2AnalysisStateChangeEventPattern(): EventPattern {
   };
 }
 
-function buildWorkflowManagerReadyEventPattern(): EventPattern {
+function buildWorkflowManagerReadyEventPatternLegacy(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
       workflowName: [WORKFLOW_NAME],
+      status: [READY_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerReadyEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [WORKFLOW_NAME],
+      },
       status: [READY_STATUS],
     },
   };
@@ -64,7 +78,7 @@ function buildBsshFastqCopyToAwsSucceededEventPattern(): EventPattern {
 
 function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
   return new events.Rule(scope, props.ruleName, {
-    ruleName: props.ruleName,
+    ruleName: withStackPrefix(props.ruleName),
     eventPattern: props.eventPattern,
     eventBus: props.eventBus,
   });
@@ -77,6 +91,17 @@ function buildIcav2WesAnalysisStateChangeRule(
   return buildEventRule(scope, {
     ruleName: props.ruleName,
     eventPattern: buildIcav2AnalysisStateChangeEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRuleLegacy(
+  scope: Construct,
+  props: BuildBclconvertInteropQcReadyRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildWorkflowManagerReadyEventPatternLegacy(),
     eventBus: props.eventBus,
   });
 }
@@ -112,7 +137,7 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeRuleNameList) {
     switch (ruleName) {
-      case 'bsshFastqCopySucceded': {
+      case 'bsshToAwsS3CopySucceededEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
           ruleObject: buildWorkflowRunStateChangeBsshFastqCopySucceededEventRule(scope, {
@@ -122,7 +147,17 @@ export function buildAllEventRules(
         });
         break;
       }
-      case 'bclconvertInteropQcReady': {
+      case 'ReadyEventLegacy': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRuleLegacy(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
+          }),
+        });
+        break;
+      }
+      case 'ReadyEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
           ruleObject: buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRule(scope, {
@@ -132,7 +167,7 @@ export function buildAllEventRules(
         });
         break;
       }
-      case 'bclconvertInteropQcIcav2WesAnalysisStateChange': {
+      case 'Icav2WascEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
           ruleObject: buildIcav2WesAnalysisStateChangeRule(scope, {

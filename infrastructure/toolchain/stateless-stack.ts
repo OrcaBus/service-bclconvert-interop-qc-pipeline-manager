@@ -15,9 +15,9 @@ export class StatelessStack extends cdk.Stack {
       stack: StatelessApplicationStack,
       stackName: 'OrcaBus-BclconvertInteropQc-StatelessMicroservice',
       stackConfig: {
-        beta: getStatelessStackProps(),
-        gamma: getStatelessStackProps(),
-        prod: getStatelessStackProps(),
+        beta: getStatelessStackProps('BETA'),
+        gamma: getStatelessStackProps('GAMMA'),
+        prod: getStatelessStackProps('PROD'),
       },
       pipelineName: 'OrcaBus-BclconvertInteropQc-StatelessMicroserviceDeployment',
       cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateless synth'],
