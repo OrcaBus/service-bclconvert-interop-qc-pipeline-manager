@@ -4,14 +4,16 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
  * EventBridge Rules Interfaces
  */
 export type EventBridgeRuleNameList =
-  | 'bsshFastqCopySucceded'
-  | 'bclconvertInteropQcReady'
-  | 'bclconvertInteropQcIcav2WesAnalysisStateChange';
+  | 'bsshToAwsS3CopySucceededEvent'
+  | 'ReadyEventLegacy'
+  | 'ReadyEvent'
+  | 'Icav2WascEvent';
 
 export const eventBridgeRuleNameList: EventBridgeRuleNameList[] = [
-  'bclconvertInteropQcReady',
-  'bsshFastqCopySucceded',
-  'bclconvertInteropQcIcav2WesAnalysisStateChange',
+  'bsshToAwsS3CopySucceededEvent',
+  'ReadyEventLegacy',
+  'ReadyEvent',
+  'Icav2WascEvent',
 ];
 
 export interface EventBridgeRuleProps {

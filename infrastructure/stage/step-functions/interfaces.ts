@@ -1,19 +1,19 @@
 import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { LambdaNameList, LambdaObject } from '../lambda/interfaces';
-import { SsmParameterPaths } from '../interfaces';
+import { SsmParameterPaths } from '../ssm/interfaces';
 
 /**
  * Step Function Interfaces
  */
 export type StateMachineNameList =
-  | 'bclconvertInteropqcReadyToIcav2WesSubmitted'
-  | 'bsshSucceededToBclconvertInteropQcReadyWrsc'
+  | 'readyToIcav2WesSubmitEvent'
+  | 'bsshFastqToAwsWrscToReadyWrsc'
   | 'icav2WesEventToWrscEvent';
 
 export const stateMachineNameList: StateMachineNameList[] = [
-  'bclconvertInteropqcReadyToIcav2WesSubmitted',
-  'bsshSucceededToBclconvertInteropQcReadyWrsc',
+  'readyToIcav2WesSubmitEvent',
+  'bsshFastqToAwsWrscToReadyWrsc',
   'icav2WesEventToWrscEvent',
 ];
 
@@ -34,6 +34,7 @@ export interface BuildStepFunctionProps extends StepFunctionInput {
   lambdaObjects: LambdaObject[];
   eventBus: IEventBus;
   ssmParameterPaths: SsmParameterPaths;
+  isNewWorkflowManagerDeployed: boolean;
 }
 
 export interface StepFunctionObject extends StepFunctionInput {
@@ -46,11 +47,11 @@ export type BuildStepFunctionsProps = Omit<BuildStepFunctionProps, 'stateMachine
 
 export const stepFunctionsRequirementsMap: Record<StateMachineNameList, StepFunctionRequirements> =
   {
-    bclconvertInteropqcReadyToIcav2WesSubmitted: {
+    readyToIcav2WesSubmitEvent: {
       needsEventPutPermission: true,
       needsSsmParameterStoreAccess: true,
     },
-    bsshSucceededToBclconvertInteropQcReadyWrsc: {
+    bsshFastqToAwsWrscToReadyWrsc: {
       needsEventPutPermission: true,
       needsSsmParameterStoreAccess: true,
     },
@@ -60,8 +61,8 @@ export const stepFunctionsRequirementsMap: Record<StateMachineNameList, StepFunc
   };
 
 export const stepFunctionToLambdasMap: Record<StateMachineNameList, LambdaNameList[]> = {
-  bclconvertInteropqcReadyToIcav2WesSubmitted: ['bclconvertInteropqcReadyToIcav2WesRequest'],
-  bsshSucceededToBclconvertInteropQcReadyWrsc: [
+  readyToIcav2WesSubmitEvent: ['bclconvertInteropqcReadyToIcav2WesRequest'],
+  bsshFastqToAwsWrscToReadyWrsc: [
     'generateWorkflowRunNameAndPortalRunId',
     'bsshFastqCopySucceededToBclconvertInteropQcReady',
   ],

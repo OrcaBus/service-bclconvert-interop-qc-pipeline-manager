@@ -8,11 +8,13 @@ import { StepFunctionObject } from '../step-functions/interfaces';
  */
 export type EventBridgeTargetNameList =
   | 'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget'
+  | 'bclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget'
   | 'bclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget'
   | 'icav2WesAnalysisStateChangeEventToWrscSfnTarget';
 
 export const eventBridgeTargetsNameList: EventBridgeTargetNameList[] = [
   'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget',
+  'bclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget',
   'bclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget',
   'icav2WesAnalysisStateChangeEventToWrscSfnTarget',
 ];

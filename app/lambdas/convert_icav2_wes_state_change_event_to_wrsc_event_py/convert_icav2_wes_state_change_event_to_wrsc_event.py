@@ -162,11 +162,10 @@ def handler(event, context):
             # Portal Run ID
             "portalRunId": portal_run_id,
             # Workflow details
-            "workflowName": workflow_run['workflow']['workflowName'],
-            "workflowVersion": workflow_run['workflow']['workflowVersion'],
+            "workflow": workflow_run['workflow'],
             "workflowRunName": workflow_run['workflowRunName'],
             # Linked libraries in workflow run
-            "linkedLibraries": workflow_run['libraries'],
+            "libraries": workflow_run['libraries'],
             # Payload containing the original inputs and engine parameters
             # But with the updated outputs if available
             "payload": {

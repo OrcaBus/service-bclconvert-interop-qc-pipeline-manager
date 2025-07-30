@@ -18,15 +18,50 @@ import {
   ICAV2_WES_REQUEST_DETAIL_TYPE,
   ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
   SSM_PARAMETER_PATH_PREFIX,
+  NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
 } from './constants';
 import { StatefulApplicationStackConfig, StatelessApplicationStackConfig } from './interfaces';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import { icav2ProjectId } from '@orcabus/platform-cdk-constructs/shared-config/icav2';
-import {
-  pipelineCacheBucket,
-  pipelineCachePrefix,
-} from '@orcabus/platform-cdk-constructs/shared-config/s3';
+import { ICAV2_PROJECT_ID } from '@orcabus/platform-cdk-constructs/shared-config/icav2';
+import { substituteBucketConstants } from './utils';
+import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
 
+const getSsmParameterPaths = (): SsmParameterPaths => {
+  return {
+    // Top level SSM parameter paths
+    ssmRootPrefix: SSM_PARAMETER_PATH_PREFIX,
+
+    // Detail level
+    workflowName: SSM_PARAMETER_PATH_WORKFLOW_NAME,
+    workflowVersion: SSM_PARAMETER_PATH_WORKFLOW_VERSION,
+
+    // Payload
+    payloadVersion: SSM_PARAMETER_PATH_PAYLOAD_VERSION,
+
+    // Engine parameters
+    prefixPipelineIdsByWorkflowVersion: SSM_PARAMETER_PATH_PREFIX_PIPELINE_IDS_BY_WORKFLOW_VERSION,
+    icav2ProjectId: SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
+    logsPrefix: SSM_PARAMETER_PATH_LOGS_PREFIX,
+    outputPrefix: SSM_PARAMETER_PATH_OUTPUT_PREFIX,
+  };
+};
+
+const getSsmParameterValues = (stage: StageName): SsmParameterValues => {
+  return {
+    // Detail
+    workflowName: WORKFLOW_NAME,
+    workflowVersion: WORKFLOW_VERSION,
+
+    // Payload
+    payloadVersion: PAYLOAD_VERSION,
+
+    // Engine parameters
+    pipelineIdsByWorkflowVersionMap: WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP,
+    icav2ProjectId: ICAV2_PROJECT_ID[stage],
+    logsPrefix: substituteBucketConstants(WORKFLOW_LOGS_PREFIX, stage),
+    outputPrefix: substituteBucketConstants(WORKFLOW_OUTPUT_PREFIX, stage),
+  };
+};
 /**
  * Stateful stack properties for the workflow.
  * Mainly just linking values from SSM parameters
@@ -34,54 +69,30 @@ import {
  */
 export const getStatefulStackProps = (stage: StageName): StatefulApplicationStackConfig => {
   return {
-    // Values
-    workflowName: WORKFLOW_NAME,
-    workflowVersion: WORKFLOW_VERSION,
-    pipelineIdsByWorkflowVersionMap: WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP,
-    icav2ProjectId: icav2ProjectId[stage],
-    payloadVersion: PAYLOAD_VERSION,
-    logsPrefix: WORKFLOW_LOGS_PREFIX.replace(
-      /{__CACHE_BUCKET__}/g,
-      pipelineCacheBucket[stage]
-    ).replace(/{__CACHE_PREFIX__}/g, pipelineCachePrefix[stage]),
-    outputPrefix: WORKFLOW_OUTPUT_PREFIX.replace(
-      /{__CACHE_BUCKET__}/g,
-      pipelineCacheBucket[stage]
-    ).replace(/{__CACHE_PREFIX__}/g, pipelineCachePrefix[stage]),
     // Keys
-    ssmParameterPaths: {
-      ssmRootPrefix: SSM_PARAMETER_PATH_PREFIX,
-      workflowName: SSM_PARAMETER_PATH_WORKFLOW_NAME,
-      workflowVersion: SSM_PARAMETER_PATH_WORKFLOW_VERSION,
-      prefixPipelineIdsByWorkflowVersion:
-        SSM_PARAMETER_PATH_PREFIX_PIPELINE_IDS_BY_WORKFLOW_VERSION,
-      icav2ProjectId: SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
-      payloadVersion: SSM_PARAMETER_PATH_PAYLOAD_VERSION,
-      logsPrefix: SSM_PARAMETER_PATH_LOGS_PREFIX,
-      outputPrefix: SSM_PARAMETER_PATH_OUTPUT_PREFIX,
-    },
+    ssmParameterPaths: getSsmParameterPaths(),
+
+    // Values
+    ssmParameterValues: getSsmParameterValues(stage),
   };
 };
 
-export const getStatelessStackProps = (): StatelessApplicationStackConfig => {
+export const getStatelessStackProps = (stage: StageName): StatelessApplicationStackConfig => {
   return {
     // SSM Parameter Paths
-    ssmParameterPaths: {
-      ssmRootPrefix: SSM_PARAMETER_PATH_PREFIX,
-      workflowName: SSM_PARAMETER_PATH_WORKFLOW_NAME,
-      workflowVersion: SSM_PARAMETER_PATH_WORKFLOW_VERSION,
-      prefixPipelineIdsByWorkflowVersion:
-        SSM_PARAMETER_PATH_PREFIX_PIPELINE_IDS_BY_WORKFLOW_VERSION,
-      icav2ProjectId: SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
-      payloadVersion: SSM_PARAMETER_PATH_PAYLOAD_VERSION,
-      logsPrefix: SSM_PARAMETER_PATH_LOGS_PREFIX,
-      outputPrefix: SSM_PARAMETER_PATH_OUTPUT_PREFIX,
-    },
+    ssmParameterPaths: getSsmParameterPaths(),
+
+    // Sending event rule stuff
+    workflowRunStateChangeDetailType: WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
+    icav2WesRequestDetailType: ICAV2_WES_REQUEST_DETAIL_TYPE,
+
+    // Event Rule stuff
     workflowName: WORKFLOW_NAME,
     eventBusName: EVENT_BUS_NAME,
     eventSource: EVENT_SOURCE,
-    workflowRunStateChangeDetailType: WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
-    icav2WesRequestDetailType: ICAV2_WES_REQUEST_DETAIL_TYPE,
     icav2WesStateChangeDetailType: ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
+
+    // Is new workflow manager deployed
+    isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],
   };
 };

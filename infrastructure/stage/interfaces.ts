@@ -4,30 +4,16 @@ Interfaces for the application
 
  */
 
+import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
+
 /**
  * Stateful application stack interface.
  */
 
-export interface SsmParameterPaths {
-  ssmRootPrefix: string;
-  workflowName: string;
-  workflowVersion: string;
-  prefixPipelineIdsByWorkflowVersion: string;
-  icav2ProjectId: string;
-  payloadVersion: string;
-  logsPrefix: string;
-  outputPrefix: string;
-}
-
 export interface StatefulApplicationStackConfig {
   // Values
-  workflowName: string;
-  workflowVersion: string;
-  pipelineIdsByWorkflowVersionMap: Record<string, string>;
-  icav2ProjectId: string;
-  payloadVersion: string;
-  logsPrefix: string;
-  outputPrefix: string;
+  ssmParameterValues: SsmParameterValues;
+
   // Keys
   ssmParameterPaths: SsmParameterPaths;
 }
@@ -48,4 +34,7 @@ export interface StatelessApplicationStackConfig {
   workflowRunStateChangeDetailType: string;
   icav2WesRequestDetailType: string;
   icav2WesStateChangeDetailType: string;
+
+  // Is the new workflow manager deployed
+  isNewWorkflowManagerDeployed: boolean;
 }

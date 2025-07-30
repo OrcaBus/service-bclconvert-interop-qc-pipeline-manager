@@ -35,7 +35,7 @@
             "Get Default Pipeline Id for Workflow Version": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}' & $bclconvertInteropQcReadyEventDetail.workflowVersion %}"
+                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $bclconvertInteropQcReadyEventDetail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
