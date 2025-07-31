@@ -8,7 +8,7 @@
       "Assign": {
         "instrumentRunId": "{% $states.input.instrumentRunId %}",
         "primaryDataOutputUri": "{% $states.input.primaryDataOutputUri %}",
-        "linkedLibraries": "{% $states.input.linkedLibraries %}"
+        "libraries": "{% $states.input.libraries %}"
       }
     },
     "Get workflow name and version from ssm parameters": {
@@ -149,7 +149,7 @@
           "portalRunId": "{% $portalRunId %}",
           "instrumentRunId": "{% $instrumentRunId %}",
           "primaryDataOutputUri": "{% $primaryDataOutputUri %}",
-          "linkedLibraries": "{% $linkedLibraries %}"
+          "libraries": "{% $libraries %}"
         }
       },
       "Retry": [
@@ -166,10 +166,21 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Push BCLConvert InterOp QC Ready Event",
+      "Next": "Has new workflow manager been deployed",
       "Output": {
         "bclconvertInterOpQcEventDetail": "{% $states.result.Payload.bclconvertInterOpQcEventDetail %}"
       }
+    },
+    "Has new workflow manager been deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Push BCLConvert InterOp QC Ready Event",
+          "Condition": "{% /* ${__new_workflow_manager_is_deployed__} */ false %}",
+          "Comment": "New workflow manager is deployed"
+        }
+      ],
+      "Default": "Push BCLConvert InterOp QC Ready Event (Legacy)"
     },
     "Push BCLConvert InterOp QC Ready Event": {
       "Type": "Task",
@@ -178,6 +189,21 @@
         "Entries": [
           {
             "Detail": "{% $states.input.bclconvertInterOpQcEventDetail %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__event_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Push BCLConvert InterOp QC Ready Event (Legacy)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $states.input.bclconvertInterOpQcEventDetail ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
             "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__event_source__}"

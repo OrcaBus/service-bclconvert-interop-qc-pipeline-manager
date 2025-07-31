@@ -4,12 +4,14 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
  * EventBridge Rules Interfaces
  */
 export type EventBridgeRuleNameList =
+  | 'bsshToAwsS3CopySucceededEventLegacy'
   | 'bsshToAwsS3CopySucceededEvent'
   | 'ReadyEventLegacy'
   | 'ReadyEvent'
   | 'Icav2WascEvent';
 
 export const eventBridgeRuleNameList: EventBridgeRuleNameList[] = [
+  'bsshToAwsS3CopySucceededEventLegacy',
   'bsshToAwsS3CopySucceededEvent',
   'ReadyEventLegacy',
   'ReadyEvent',

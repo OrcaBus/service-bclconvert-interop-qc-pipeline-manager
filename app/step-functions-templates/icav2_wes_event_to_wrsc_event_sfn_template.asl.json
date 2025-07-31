@@ -35,7 +35,7 @@
       "Choices": [
         {
           "Next": "Push WRSC Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Condition": "{% /* ${__new_workflow_manager_is_deployed__} */ false %}",
           "Comment": "Has new workflow manager been pushed yet?"
         }
       ],

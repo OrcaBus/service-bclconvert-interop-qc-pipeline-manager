@@ -97,7 +97,7 @@ def handler(event, context) -> Dict[str, Dict[str, Any]]:
     portal_run_id = event["portalRunId"]
     instrument_run_id = event["instrumentRunId"]
     primary_data_output_uri = event["primaryDataOutputUri"]
-    linked_libraries = event["linkedLibraries"]
+    libraries = event["libraries"]
     workflow_output_uri_prefix = event["workflowOutputPrefix"]
     workflow_logs_uri_prefix = event["workflowLogsPrefix"]
 
@@ -110,14 +110,17 @@ def handler(event, context) -> Dict[str, Dict[str, Any]]:
           "timestamp": datetime.now(timezone.utc).isoformat(timespec='seconds').replace("+00:00", 'Z'),
           # Portal Run ID For the BSSH Fastq Copy Manager
           "portalRunId": portal_run_id,  # pragma: allowlist secret
-          # Workflow name
-          "workflowName": workflow_name,
-          # Workflow version
-          "workflowVersion": workflow_version,
+          # Workflow
+          "workflow": {
+              # Workflow name
+              "name": workflow_name,
+              # Workflow version
+              "version": workflow_version
+          },
           # Workflow run name
           "workflowRunName": workflow_run_name,
           # Linked libraries in the instrument run
-          "linkedLibraries": linked_libraries,
+          "libraries": libraries,
           "payload": {
             "version": payload_version,
             "data": {
