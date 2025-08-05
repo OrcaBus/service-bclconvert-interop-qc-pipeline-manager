@@ -65,12 +65,25 @@ function buildWorkflowManagerReadyEventPattern(): EventPattern {
   };
 }
 
-function buildBsshFastqCopyToAwsSucceededEventPattern(): EventPattern {
+function buildBsshFastqCopyToAwsSucceededEventPatternLegacy(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
       workflowName: [BSSH_FASTQ_COPY_TO_AWS_WORKFLOW_RUN_NAME],
+      status: [SUCCEEDED_STATUS],
+    },
+  };
+}
+
+function buildBsshFastqCopyToAwsSucceededEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [BSSH_FASTQ_COPY_TO_AWS_WORKFLOW_RUN_NAME],
+      },
       status: [SUCCEEDED_STATUS],
     },
   };
@@ -84,13 +97,24 @@ function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
   });
 }
 
-function buildIcav2WesAnalysisStateChangeRule(
+function buildWorkflowRunStateChangeBsshFastqCopySucceededEventRuleLegacy(
   scope: Construct,
-  props: BuildIcav2AnalysisStateChangeRuleProps
+  props: BuildBsshFastqCopySucceededRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: buildIcav2AnalysisStateChangeEventPattern(),
+    eventPattern: buildBsshFastqCopyToAwsSucceededEventPatternLegacy(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeBsshFastqCopySucceededEventRule(
+  scope: Construct,
+  props: BuildBsshFastqCopySucceededRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildBsshFastqCopyToAwsSucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -117,13 +141,13 @@ function buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRule(
   });
 }
 
-function buildWorkflowRunStateChangeBsshFastqCopySucceededEventRule(
+function buildIcav2WesAnalysisStateChangeRule(
   scope: Construct,
-  props: BuildBsshFastqCopySucceededRuleProps
+  props: BuildIcav2AnalysisStateChangeRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: buildBsshFastqCopyToAwsSucceededEventPattern(),
+    eventPattern: buildIcav2AnalysisStateChangeEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -137,6 +161,16 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeRuleNameList) {
     switch (ruleName) {
+      case 'bsshToAwsS3CopySucceededEventLegacy': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeBsshFastqCopySucceededEventRuleLegacy(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
+          }),
+        });
+        break;
+      }
       case 'bsshToAwsS3CopySucceededEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,

@@ -7,6 +7,7 @@ import { StepFunctionObject } from '../step-functions/interfaces';
  * EventBridge Target Interfaces
  */
 export type EventBridgeTargetNameList =
+  | 'bsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget'
   | 'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget'
   | 'bclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget'
   | 'bclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget'

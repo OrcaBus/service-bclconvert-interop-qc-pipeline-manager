@@ -8,17 +8,33 @@ import * as events from 'aws-cdk-lib/aws-events';
 import { EventField, RuleTargetInput } from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 
-export function buildBsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget(
+export function buildBsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget(
   props: AddSfnAsEventBridgeTargetProps
 ) {
   // We take in the event detail from the bssh fastq copy succeeded event
-  // And return only the instrument run id and the output prefix and linkedLibraries
+  // And return only the instrument run id and the output prefix and libraries
   props.eventBridgeRuleObj.addTarget(
     new eventsTargets.SfnStateMachine(props.stateMachineObj, {
       input: RuleTargetInput.fromObject({
         instrumentRunId: EventField.fromPath('$.detail.payload.data.outputs.instrumentRunId'),
         primaryDataOutputUri: EventField.fromPath('$.detail.payload.data.outputs.outputUri'),
-        linkedLibraries: EventField.fromPath('$.detail.linkedLibraries'),
+        libraries: EventField.fromPath('$.detail.linkedLibraries'),
+      }),
+    })
+  );
+}
+
+export function buildBsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget(
+  props: AddSfnAsEventBridgeTargetProps
+) {
+  // We take in the event detail from the bssh fastq copy succeeded event
+  // And return only the instrument run id and the output prefix and libraries
+  props.eventBridgeRuleObj.addTarget(
+    new eventsTargets.SfnStateMachine(props.stateMachineObj, {
+      input: RuleTargetInput.fromObject({
+        instrumentRunId: EventField.fromPath('$.detail.payload.data.outputs.instrumentRunId'),
+        primaryDataOutputUri: EventField.fromPath('$.detail.payload.data.outputs.outputUri'),
+        libraries: EventField.fromPath('$.detail.libraries'),
       }),
     })
   );
@@ -28,7 +44,7 @@ export function buildBclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget(
   props: AddSfnAsEventBridgeTargetProps
 ) {
   // We take in the event detail from the bssh fastq copy succeeded event
-  // And return only the instrument run id and the output prefix and linkedLibraries
+  // And return the event in the new format
   props.eventBridgeRuleObj.addTarget(
     new eventsTargets.SfnStateMachine(props.stateMachineObj, {
       input: RuleTargetInput.fromObject({
@@ -74,6 +90,21 @@ export function buildIcav2WesEventStateChangeToWrscSfnTarget(
 export function buildAllEventBridgeTargets(scope: Construct, props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
+      case 'bsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget': {
+        buildBsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget(<
+          AddSfnAsEventBridgeTargetProps
+        >{
+          eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
+            (eventBridgeObject) =>
+              eventBridgeObject.ruleName === 'bsshToAwsS3CopySucceededEventLegacy'
+          )?.ruleObject,
+          stateMachineObj: props.stepFunctionObjects.find(
+            (eventBridgeObject) =>
+              eventBridgeObject.stateMachineName === 'bsshFastqToAwsWrscToReadyWrsc'
+          )?.sfnObject,
+        });
+        break;
+      }
       case 'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget': {
         buildBsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget(<
           AddSfnAsEventBridgeTargetProps
