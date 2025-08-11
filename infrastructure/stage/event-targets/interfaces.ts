@@ -14,6 +14,7 @@ export type EventBridgeTargetNameList =
   | 'icav2WesAnalysisStateChangeEventToWrscSfnTarget';
 
 export const eventBridgeTargetsNameList: EventBridgeTargetNameList[] = [
+  'bsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget',
   'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget',
   'bclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget',
   'bclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget',
