@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { StatefulApplicationStackConfig } from './interfaces';
 import { buildSsmParameters } from './ssm';
+import { buildSchemas } from './event-schemas';
 
 export type StatefulApplicationStackProps = StatefulApplicationStackConfig & cdk.StackProps;
 
@@ -16,5 +17,10 @@ export class StatefulApplicationStack extends cdk.Stack {
       ssmParameterValues: props.ssmParameterValues,
       ssmParameterPaths: props.ssmParameterPaths,
     });
+
+    /**
+     * Build the schemas
+     */
+    buildSchemas(this);
   }
 }

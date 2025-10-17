@@ -5,69 +5,33 @@ import {
 } from './interfaces';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as events from 'aws-cdk-lib/aws-events';
-import { EventField, RuleTargetInput } from 'aws-cdk-lib/aws-events';
+import { EventField } from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 
-export function buildBsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget(
-  props: AddSfnAsEventBridgeTargetProps
-) {
-  // We take in the event detail from the bssh fastq copy succeeded event
-  // And return only the instrument run id and the output prefix and libraries
+export function buildWrscLegacyToSfnTarget(props: AddSfnAsEventBridgeTargetProps) {
+  // We take in the event detail from the sash ready event
+  // And return the entire detail to the state machine
   props.eventBridgeRuleObj.addTarget(
     new eventsTargets.SfnStateMachine(props.stateMachineObj, {
-      input: RuleTargetInput.fromObject({
-        instrumentRunId: EventField.fromPath('$.detail.payload.data.outputs.instrumentRunId'),
-        primaryDataOutputUri: EventField.fromPath('$.detail.payload.data.outputs.outputUri'),
-        libraries: EventField.fromPath('$.detail.linkedLibraries'),
-      }),
-    })
-  );
-}
-
-export function buildBsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget(
-  props: AddSfnAsEventBridgeTargetProps
-) {
-  // We take in the event detail from the bssh fastq copy succeeded event
-  // And return only the instrument run id and the output prefix and libraries
-  props.eventBridgeRuleObj.addTarget(
-    new eventsTargets.SfnStateMachine(props.stateMachineObj, {
-      input: RuleTargetInput.fromObject({
-        instrumentRunId: EventField.fromPath('$.detail.payload.data.outputs.instrumentRunId'),
-        primaryDataOutputUri: EventField.fromPath('$.detail.payload.data.outputs.outputUri'),
-        libraries: EventField.fromPath('$.detail.libraries'),
-      }),
-    })
-  );
-}
-
-export function buildBclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget(
-  props: AddSfnAsEventBridgeTargetProps
-) {
-  // We take in the event detail from the bssh fastq copy succeeded event
-  // And return the event in the new format
-  props.eventBridgeRuleObj.addTarget(
-    new eventsTargets.SfnStateMachine(props.stateMachineObj, {
-      input: RuleTargetInput.fromObject({
-        portalRunId: EventField.fromPath('$.detail.portalRunId'),
-        timestamp: EventField.fromPath('$.detail.timestamp'),
+      input: events.RuleTargetInput.fromObject({
         status: EventField.fromPath('$.detail.status'),
+        timestamp: EventField.fromPath('$.detail.timestamp'),
         workflow: {
           name: EventField.fromPath('$.detail.workflowName'),
           version: EventField.fromPath('$.detail.workflowVersion'),
         },
         workflowRunName: EventField.fromPath('$.detail.workflowRunName'),
-        libraries: EventField.fromPath('$.detail.libraries'),
+        portalRunId: EventField.fromPath('$.detail.portalRunId'),
+        libraries: EventField.fromPath('$.detail.linkedLibraries'),
         payload: EventField.fromPath('$.detail.payload'),
       }),
     })
   );
 }
 
-export function buildBclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget(
-  props: AddSfnAsEventBridgeTargetProps
-) {
-  // We take in the event detail from the bssh fastq copy succeeded event
-  // And return only the instrument run id and the output prefix and linkedLibraries
+export function buildWrscToSfnTarget(props: AddSfnAsEventBridgeTargetProps) {
+  // We take in the event detail from the sash ready event
+  // And return the entire detail to the state machine
   props.eventBridgeRuleObj.addTarget(
     new eventsTargets.SfnStateMachine(props.stateMachineObj, {
       input: events.RuleTargetInput.fromEventPath('$.detail'),
@@ -90,61 +54,55 @@ export function buildIcav2WesEventStateChangeToWrscSfnTarget(
 export function buildAllEventBridgeTargets(scope: Construct, props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
-      case 'bsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget': {
-        buildBsshFastqCopySucceededLegacyToBclconvertInteropQcReadySfnTarget(<
-          AddSfnAsEventBridgeTargetProps
-        >{
+      // Validate draft data
+      case 'draftLegacyToValidateDraftSfnTarget': {
+        buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.ruleName === 'bsshToAwsS3CopySucceededEventLegacy'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraftLegacy'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.stateMachineName === 'bsshFastqToAwsWrscToReadyWrsc'
+            (sfnObject) => sfnObject.stateMachineName === 'validateDraftToReady'
           )?.sfnObject,
         });
         break;
       }
-      case 'bsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget': {
-        buildBsshFastqCopySucceededToBclconvertInteropQcReadySfnTarget(<
-          AddSfnAsEventBridgeTargetProps
-        >{
+      case 'draftToValidateDraftSfnTarget': {
+        buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'bsshToAwsS3CopySucceededEvent'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraft'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.stateMachineName === 'bsshFastqToAwsWrscToReadyWrsc'
+            (sfnObject) => sfnObject.stateMachineName === 'validateDraftToReady'
           )?.sfnObject,
         });
         break;
       }
-      case 'bclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget': {
-        buildBclconvertInteropQcReadyLegacyToIcav2WesSubmittedSfnTarget(<
-          AddSfnAsEventBridgeTargetProps
-        >{
+
+      // Ready to Icav2 Wes Submitted
+      case 'readyToIcav2WesSubmiitedLegacySfnTarget': {
+        buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'ReadyEventLegacy'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscReadyLegacy'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.stateMachineName === 'readyToIcav2WesSubmitEvent'
+            (sfnObject) => sfnObject.stateMachineName === 'readyToIcav2WesSubmitEvent'
           )?.sfnObject,
         });
         break;
       }
-      case 'bclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget': {
-        buildBclconvertInteropQcReadyToIcav2WesSubmittedSfnTarget(<AddSfnAsEventBridgeTargetProps>{
+      case 'readyToIcav2WesSubmiitedSfnTarget': {
+        buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'ReadyEvent'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscReady'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.stateMachineName === 'readyToIcav2WesSubmitEvent'
+            (sfnObject) => sfnObject.stateMachineName === 'readyToIcav2WesSubmitEvent'
           )?.sfnObject,
         });
         break;
       }
+
+      // Post Submission
       case 'icav2WesAnalysisStateChangeEventToWrscSfnTarget': {
         buildIcav2WesEventStateChangeToWrscSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(

@@ -9,6 +9,7 @@ export interface SsmParameterValues {
   icav2ProjectId: string;
   logsPrefix: string;
   outputPrefix: string;
+  cachePrefix: string;
 }
 
 export interface SsmParameterPaths {
@@ -25,6 +26,7 @@ export interface SsmParameterPaths {
   icav2ProjectId: string;
   logsPrefix: string;
   outputPrefix: string;
+  cachePrefix: string;
 }
 
 export interface BuildSsmParameterProps {

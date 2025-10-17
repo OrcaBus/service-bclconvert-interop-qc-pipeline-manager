@@ -1,8 +1,8 @@
 /* Event Bridge Rules */
 import {
-  BuildBclconvertInteropQcReadyRuleProps,
-  BuildBsshFastqCopySucceededRuleProps,
-  BuildIcav2AnalysisStateChangeRuleProps,
+  BuildDraftRuleProps,
+  BuildIascRuleProps,
+  BuildReadyRuleProps,
   eventBridgeRuleNameList,
   EventBridgeRuleObject,
   EventBridgeRuleProps,
@@ -12,11 +12,10 @@ import { EventPattern, Rule } from 'aws-cdk-lib/aws-events';
 import * as events from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 import {
-  BSSH_FASTQ_COPY_TO_AWS_WORKFLOW_RUN_NAME,
+  DRAFT_STATUS,
   ICAV2_WES_EVENT_SOURCE,
   ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
   READY_STATUS,
-  SUCCEEDED_STATUS,
   WORKFLOW_MANAGER_EVENT_SOURCE,
   WORKFLOW_NAME,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
@@ -41,13 +40,37 @@ function buildIcav2AnalysisStateChangeEventPattern(): EventPattern {
   };
 }
 
-function buildWorkflowManagerReadyEventPatternLegacy(): EventPattern {
+function buildWorkflowManagerLegacyDraftEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflowName: [WORKFLOW_NAME],
+      status: [DRAFT_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
       workflowName: [WORKFLOW_NAME],
       status: [READY_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerDraftEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [WORKFLOW_NAME],
+      },
+      status: [DRAFT_STATUS],
     },
   };
 }
@@ -65,30 +88,6 @@ function buildWorkflowManagerReadyEventPattern(): EventPattern {
   };
 }
 
-function buildBsshFastqCopyToAwsSucceededEventPatternLegacy(): EventPattern {
-  return {
-    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
-    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
-    detail: {
-      workflowName: [BSSH_FASTQ_COPY_TO_AWS_WORKFLOW_RUN_NAME],
-      status: [SUCCEEDED_STATUS],
-    },
-  };
-}
-
-function buildBsshFastqCopyToAwsSucceededEventPattern(): EventPattern {
-  return {
-    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
-    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
-    detail: {
-      workflow: {
-        name: [BSSH_FASTQ_COPY_TO_AWS_WORKFLOW_RUN_NAME],
-      },
-      status: [SUCCEEDED_STATUS],
-    },
-  };
-}
-
 function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
   return new events.Rule(scope, props.ruleName, {
     ruleName: withStackPrefix(props.ruleName),
@@ -97,42 +96,42 @@ function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
   });
 }
 
-function buildWorkflowRunStateChangeBsshFastqCopySucceededEventRuleLegacy(
+function buildWorkflowRunStateChangeDraftLegacyEventRule(
   scope: Construct,
-  props: BuildBsshFastqCopySucceededRuleProps
+  props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: buildBsshFastqCopyToAwsSucceededEventPatternLegacy(),
+    eventPattern: buildWorkflowManagerLegacyDraftEventPattern(),
     eventBus: props.eventBus,
   });
 }
 
-function buildWorkflowRunStateChangeBsshFastqCopySucceededEventRule(
+function buildWorkflowRunStateChangeReadyLegacyEventRule(
   scope: Construct,
-  props: BuildBsshFastqCopySucceededRuleProps
+  props: BuildReadyRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: buildBsshFastqCopyToAwsSucceededEventPattern(),
+    eventPattern: buildWorkflowManagerLegacyReadyEventPattern(),
     eventBus: props.eventBus,
   });
 }
 
-function buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRuleLegacy(
+function buildWorkflowRunStateChangeDraftEventRule(
   scope: Construct,
-  props: BuildBclconvertInteropQcReadyRuleProps
+  props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: buildWorkflowManagerReadyEventPatternLegacy(),
+    eventPattern: buildWorkflowManagerDraftEventPattern(),
     eventBus: props.eventBus,
   });
 }
 
-function buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRule(
+function buildWorkflowRunStateChangeReadyEventRule(
   scope: Construct,
-  props: BuildBclconvertInteropQcReadyRuleProps
+  props: BuildReadyRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
@@ -141,10 +140,7 @@ function buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRule(
   });
 }
 
-function buildIcav2WesAnalysisStateChangeRule(
-  scope: Construct,
-  props: BuildIcav2AnalysisStateChangeRuleProps
-): Rule {
+function buildIcav2WesAnalysisStateChangeRule(scope: Construct, props: BuildIascRuleProps): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
     eventPattern: buildIcav2AnalysisStateChangeEventPattern(),
@@ -161,40 +157,42 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeRuleNameList) {
     switch (ruleName) {
-      case 'bsshToAwsS3CopySucceededEventLegacy': {
+      // Populate Draft Data events
+      case 'wrscDraftLegacy': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeBsshFastqCopySucceededEventRuleLegacy(scope, {
+          ruleObject: buildWorkflowRunStateChangeDraftLegacyEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
         });
         break;
       }
-      case 'bsshToAwsS3CopySucceededEvent': {
+      case 'wrscDraft': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeBsshFastqCopySucceededEventRule(scope, {
+          ruleObject: buildWorkflowRunStateChangeDraftEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
         });
         break;
       }
-      case 'ReadyEventLegacy': {
+      // Ready
+      case 'wrscReadyLegacy': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRuleLegacy(scope, {
+          ruleObject: buildWorkflowRunStateChangeReadyLegacyEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
         });
         break;
       }
-      case 'ReadyEvent': {
+      case 'wrscReady': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeBclconvertInteropQcReadyEventRule(scope, {
+          ruleObject: buildWorkflowRunStateChangeReadyEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),

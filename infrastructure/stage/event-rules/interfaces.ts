@@ -3,23 +3,29 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
 /**
  * EventBridge Rules Interfaces
  */
-export type EventBridgeRuleNameList =
-  | 'bsshToAwsS3CopySucceededEventLegacy'
-  | 'bsshToAwsS3CopySucceededEvent'
-  | 'ReadyEventLegacy'
-  | 'ReadyEvent'
+export type EventBridgeRuleName =
+  // Draft Events
+  | 'wrscDraftLegacy'
+  | 'wrscDraft'
+  // Pre-ready
+  | 'wrscReadyLegacy'
+  | 'wrscReady'
+  // Post submitted
   | 'Icav2WascEvent';
 
-export const eventBridgeRuleNameList: EventBridgeRuleNameList[] = [
-  'bsshToAwsS3CopySucceededEventLegacy',
-  'bsshToAwsS3CopySucceededEvent',
-  'ReadyEventLegacy',
-  'ReadyEvent',
+export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
+  // Draft Events
+  'wrscDraftLegacy',
+  'wrscDraft',
+  // Pre-ready
+  'wrscReadyLegacy',
+  'wrscReady',
+  // Post submitted
   'Icav2WascEvent',
 ];
 
 export interface EventBridgeRuleProps {
-  ruleName: EventBridgeRuleNameList;
+  ruleName: EventBridgeRuleName;
   eventBus: IEventBus;
   eventPattern: EventPattern;
 }
@@ -29,10 +35,10 @@ export interface EventBridgeRulesProps {
 }
 
 export interface EventBridgeRuleObject {
-  ruleName: EventBridgeRuleNameList;
+  ruleName: EventBridgeRuleName;
   ruleObject: Rule;
 }
 
-export type BuildIcav2AnalysisStateChangeRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
-export type BuildBsshFastqCopySucceededRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
-export type BuildBclconvertInteropQcReadyRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
+export type BuildDraftRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
+export type BuildReadyRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
+export type BuildIascRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;

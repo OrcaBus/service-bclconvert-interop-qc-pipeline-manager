@@ -19,10 +19,15 @@ import {
   ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
   SSM_PARAMETER_PATH_PREFIX,
   NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
+  WORKFLOW_CACHE_PREFIX,
+  SSM_PARAMETER_PATH_CACHE_PREFIX,
 } from './constants';
 import { StatefulApplicationStackConfig, StatelessApplicationStackConfig } from './interfaces';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import { ICAV2_PROJECT_ID } from '@orcabus/platform-cdk-constructs/shared-config/icav2';
+import {
+  ICAV2_ACCESS_TOKEN_SECRET_ID,
+  ICAV2_PROJECT_ID,
+} from '@orcabus/platform-cdk-constructs/shared-config/icav2';
 import { substituteBucketConstants } from './utils';
 import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
 
@@ -43,6 +48,7 @@ const getSsmParameterPaths = (): SsmParameterPaths => {
     icav2ProjectId: SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
     logsPrefix: SSM_PARAMETER_PATH_LOGS_PREFIX,
     outputPrefix: SSM_PARAMETER_PATH_OUTPUT_PREFIX,
+    cachePrefix: SSM_PARAMETER_PATH_CACHE_PREFIX,
   };
 };
 
@@ -58,8 +64,9 @@ const getSsmParameterValues = (stage: StageName): SsmParameterValues => {
     // Engine parameters
     pipelineIdsByWorkflowVersionMap: WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP,
     icav2ProjectId: ICAV2_PROJECT_ID[stage],
-    logsPrefix: substituteBucketConstants(WORKFLOW_LOGS_PREFIX, stage),
     outputPrefix: substituteBucketConstants(WORKFLOW_OUTPUT_PREFIX, stage),
+    logsPrefix: substituteBucketConstants(WORKFLOW_LOGS_PREFIX, stage),
+    cachePrefix: substituteBucketConstants(WORKFLOW_CACHE_PREFIX, stage),
   };
 };
 /**
@@ -91,6 +98,9 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
     eventBusName: EVENT_BUS_NAME,
     eventSource: EVENT_SOURCE,
     icav2WesStateChangeDetailType: ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
+
+    // Secret stuff
+    icav2AccessTokenSecretId: ICAV2_ACCESS_TOKEN_SECRET_ID[stage],
 
     // Is new workflow manager deployed
     isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],
