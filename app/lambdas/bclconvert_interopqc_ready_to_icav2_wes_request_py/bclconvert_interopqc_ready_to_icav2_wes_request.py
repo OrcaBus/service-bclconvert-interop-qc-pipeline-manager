@@ -110,15 +110,15 @@ def handler(event, context) -> Dict[str, Any]:
     :param context:
     :return:
     """
-    event_detail_body = event['bclconvertInteropQcReadyEventDetail']
-    default_pipeline_id = event['defaultPipelineId']
-    default_project_id = event['defaultProjectId']
+    event_detail_body = event['readyEventDetail']
+    parquet_file_uri_list = event_detail_body['parquetFileUriList']
 
     # Extract the inputs from the event detail body
     return {
         "icav2WesRequestEventDetail": {
             "name": event_detail_body['workflowRunName'],
             "inputs": {
+                # Mandatory data inputs
                 "bclconvert_report_directory": {
                     "class": "Directory",
                     "location": event_detail_body['payload']['data']['inputs']['bclConvertReportDirectory']
@@ -127,30 +127,18 @@ def handler(event, context) -> Dict[str, Any]:
                     "class": "Directory",
                     "location": event_detail_body['payload']['data']['inputs']['interOpDirectory']
                 },
-                "instrument_run_id": event_detail_body['payload']['data']['inputs']['instrumentRunId']
+                "instrument_run_id": event_detail_body['payload']['data']['inputs']['instrumentRunId'],
+                # Add in the parquet file uris
+                "parquet_file_uris": list(map(
+                    lambda uri: {
+                        "class": "File",
+                        "location": uri
+                    },
+                    parquet_file_uri_list
+                ))
             },
-            "engineParameters": {
-                "outputUri": event_detail_body['payload']['data']['engineParameters']['outputUri'],
-                "logsUri": event_detail_body['payload']['data']['engineParameters']['logsUri'],
-                "projectId": (
-                    event_detail_body['payload']['data']['engineParameters'].get(
-                        "projectId",
-                        default_project_id
-                    )
-                ),
-                "pipelineId": (
-                    event_detail_body['payload']['data']['engineParameters'].get(
-                        "pipelineId",
-                        default_pipeline_id
-                    )
-                ),
-            },
-            "tags": {
-                # Copy all other tags from the event detail body
-                **event_detail_body['payload']['data']['tags'],
-                # Add the portal run ID to the tags
-                "portalRunId": event_detail_body['portalRunId']
-            }
+            "engineParameters": event_detail_body['payload']['data']['engineParameters'],
+            "tags": event_detail_body['payload']['data']['tags']
         }
     }
 

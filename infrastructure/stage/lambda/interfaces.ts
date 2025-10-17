@@ -3,37 +3,68 @@ import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
 /**
  * Lambda function interface.
  */
-export type LambdaNameList =
+export type LambdaName =
+  // Shared Draft AND Ready lambdas
+  | 'getFastqIdsInInstrumentRunId'
+  | 'validateDraftDataCompleteSchema'
+  // Draft to Ready
+  | 'generateBclconvertInteropqcDraftDataEvent'
+  // Ready to ICAv2 WES
   | 'bclconvertInteropqcReadyToIcav2WesRequest'
-  | 'bsshFastqCopySucceededToBclconvertInteropQcReady'
-  | 'convertIcav2WesStateChangeEventToWrscEvent'
-  | 'generateWorkflowRunNameAndPortalRunId';
+  | 'convertS3UriToIcav2Uri'
+  // Post Submitted
+  | 'convertIcav2WesStateChangeEventToWrscEvent';
 
-export const lambdaNameList: LambdaNameList[] = [
+export const lambdaNameList: LambdaName[] = [
+  // Shared Draft AND Ready lambdas
+  'getFastqIdsInInstrumentRunId',
+  'validateDraftDataCompleteSchema',
+  // Draft to Ready
+  'generateBclconvertInteropqcDraftDataEvent',
+  // Ready to ICAv2 WES
   'bclconvertInteropqcReadyToIcav2WesRequest',
-  'bsshFastqCopySucceededToBclconvertInteropQcReady',
+  'convertS3UriToIcav2Uri',
+  // Post Submitted
   'convertIcav2WesStateChangeEventToWrscEvent',
-  'generateWorkflowRunNameAndPortalRunId',
 ];
 
 // Requirements interface for Lambda functions
 export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
-  needsWorkflowEnvVars?: boolean;
+  needsIcav2Tools?: boolean;
+  needsSsmParametersAccess?: boolean;
+  needsSchemaRegistryAccess?: boolean;
 }
 
 // Lambda requirements mapping
-export const lambdaRequirementsMap: Record<LambdaNameList, LambdaRequirements> = {
-  bclconvertInteropqcReadyToIcav2WesRequest: {},
-  bsshFastqCopySucceededToBclconvertInteropQcReady: {},
-  // Needs Orcabus API tools to fetch the existing workflow run state
-  convertIcav2WesStateChangeEventToWrscEvent: { needsOrcabusApiTools: true },
-  // Needs Orcabus API tools to generate the workflow run name and portal run ID
-  generateWorkflowRunNameAndPortalRunId: { needsOrcabusApiTools: true, needsWorkflowEnvVars: true },
+export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
+  // Shared Draft AND Ready lambdas
+  getFastqIdsInInstrumentRunId: {
+    needsOrcabusApiTools: true,
+  },
+  validateDraftDataCompleteSchema: {
+    needsSsmParametersAccess: true,
+    needsSchemaRegistryAccess: true,
+  },
+  // Draft to Ready
+  generateBclconvertInteropqcDraftDataEvent: {
+    needsOrcabusApiTools: true,
+  },
+  // Ready to ICAv2 WES
+  bclconvertInteropqcReadyToIcav2WesRequest: {
+    needsOrcabusApiTools: true,
+  },
+  convertS3UriToIcav2Uri: {
+    needsIcav2Tools: true,
+  },
+  // Post Submitted
+  convertIcav2WesStateChangeEventToWrscEvent: {
+    needsOrcabusApiTools: true,
+  },
 };
 
 export interface LambdaInput {
-  lambdaName: LambdaNameList;
+  lambdaName: LambdaName;
 }
 
 export interface LambdaObject extends LambdaInput {

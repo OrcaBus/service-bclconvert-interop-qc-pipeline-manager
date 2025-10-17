@@ -4,51 +4,229 @@
   "States": {
     "Save inputs": {
       "Type": "Pass",
-      "Next": "Get default parameters",
+      "Next": "Create named multiqc parquet files",
       "Assign": {
-        "bclconvertInteropQcReadyEventDetail": "{% $states.input %}"
+        "readyEventDetail": "{% $states.input %}"
       }
     },
-    "Get default parameters": {
+    "Create named multiqc parquet files": {
       "Type": "Parallel",
       "Next": "Convert BCLConvert Ready Event to ICAv2 WES Event",
       "Branches": [
         {
-          "StartAt": "Get Default Project ID",
+          "StartAt": "Get fastqs in instrument run id",
           "States": {
-            "Get Default Project ID": {
+            "Get fastqs in instrument run id": {
               "Type": "Task",
-              "Arguments": {
-                "Name": "${__default_project_id_ssm_parameter_name__}"
-              },
-              "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-              "End": true,
+              "Resource": "arn:aws:states:::lambda:invoke",
               "Output": {
-                "defaultProjectId": "{% $states.result.Parameter.Value %}"
+                "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__get_fastq_ids_in_instrument_run_id_lambda_function_arn__}",
+                "Payload": {
+                  "instrumentRunId": "{% $readyEventDetail.payload.data.inputs.instrumentRunId %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "For each fastq (batched)"
+            },
+            "For each fastq (batched)": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "DISTRIBUTED",
+                  "ExecutionType": "STANDARD"
+                },
+                "StartAt": "Set vars fastq map (batched)",
+                "States": {
+                  "Set vars fastq map (batched)": {
+                    "Type": "Pass",
+                    "Next": "For each fastq",
+                    "Assign": {
+                      "itemCountMapIter": "{% $states.input.BatchInput.itemCount %}",
+                      "fastqIdListMapIter": "{% $states.input.Items %}",
+                      "cacheUriMapIter": "{% $states.input.BatchInput.cacheUri %}"
+                    }
+                  },
+                  "For each fastq": {
+                    "Type": "Map",
+                    "ItemProcessor": {
+                      "ProcessorConfig": {
+                        "Mode": "INLINE"
+                      },
+                      "StartAt": "Set vars fastq map",
+                      "States": {
+                        "Set vars fastq map": {
+                          "Type": "Pass",
+                          "Next": "Jitter ecs task",
+                          "Assign": {
+                            "fastqIdMapIter": "{% $states.input.fastqId %}",
+                            "outputUriMapIter": "{% $cacheUriMapIter & $states.input.fastqId & '/' & 'multiqc.parquet' %}"
+                          }
+                        },
+                        "Jitter ecs task": {
+                          "Type": "Wait",
+                          "Seconds": "{% $round($random() * $itemCountMapIter ) + 1 %}",
+                          "Next": "Convert s3 output uri to icav2 uri"
+                        },
+                        "Convert s3 output uri to icav2 uri": {
+                          "Type": "Task",
+                          "Resource": "arn:aws:states:::lambda:invoke",
+                          "Arguments": {
+                            "FunctionName": "${__convert_s3_uri_to_icav2_uri_lambda_function_arn__}",
+                            "Payload": {
+                              "s3Uri": "{% $outputUriMapIter %}"
+                            }
+                          },
+                          "Retry": [
+                            {
+                              "ErrorEquals": [
+                                "Lambda.ServiceException",
+                                "Lambda.AWSLambdaException",
+                                "Lambda.SdkClientException",
+                                "Lambda.TooManyRequestsException"
+                              ],
+                              "IntervalSeconds": 1,
+                              "MaxAttempts": 3,
+                              "BackoffRate": 2,
+                              "JitterStrategy": "FULL"
+                            }
+                          ],
+                          "Next": "Get fastq object",
+                          "Assign": {
+                            "icav2UriMapIter": "{% $states.result.Payload.icav2Uri %}"
+                          }
+                        },
+                        "Get fastq object": {
+                          "Type": "Task",
+                          "Resource": "arn:aws:states:::lambda:invoke",
+                          "Arguments": {
+                            "FunctionName": "${__get_fastq_object_from_fastq_id_lambda_function_arn__}",
+                            "Payload": {
+                              "fastqId": "{% $fastqIdMapIter %}"
+                            }
+                          },
+                          "Retry": [
+                            {
+                              "ErrorEquals": [
+                                "Lambda.ServiceException",
+                                "Lambda.AWSLambdaException",
+                                "Lambda.SdkClientException",
+                                "Lambda.TooManyRequestsException"
+                              ],
+                              "IntervalSeconds": 1,
+                              "MaxAttempts": 3,
+                              "BackoffRate": 2,
+                              "JitterStrategy": "FULL"
+                            }
+                          ],
+                          "Output": {
+                            "multiqcParquetUri": "{% $states.result.Payload.fastqObj.qc.sequaliReports.multiqcParquet.s3Uri %}",
+                            "newSampleName": "{% $states.result.Payload.fastqObj.library.libraryId & '__' & 'L' & $string($states.result.Payload.fastqObj.lane) %}"
+                          },
+                          "Next": "Resample multiqc file and copy to cache uri"
+                        },
+                        "Resample multiqc file and copy to cache uri": {
+                          "Type": "Task",
+                          "Resource": "arn:aws:states:::ecs:runTask",
+                          "Arguments": {
+                            "LaunchType": "FARGATE",
+                            "Cluster": "${__resample_multiqc_parquet_file_cluster_arn__}",
+                            "TaskDefinition": "${__resample_multiqc_parquet_file_task_definition_arn__}",
+                            "NetworkConfiguration": {
+                              "AwsvpcConfiguration": {
+                                "Subnets": "{% $split('${__resample_multiqc_parquet_file_subnets__}', ',') %}",
+                                "SecurityGroups": "{% [ '${__resample_multiqc_parquet_file_security_group__}' ] %}"
+                              }
+                            },
+                            "Overrides": {
+                              "ContainerOverrides": [
+                                {
+                                  "Name": "${__resample_multiqc_parquet_file_container_name__}",
+                                  "Environment": [
+                                    {
+                                      "Name": "INPUT_URI",
+                                      "Value": "{% $states.input.multiqcParquetUri %}"
+                                    },
+                                    {
+                                      "Name": "OUTPUT_URI",
+                                      "Value": "{% $icav2UriMapIter %}"
+                                    },
+                                    {
+                                      "Name": "OLD_SAMPLE_NAME",
+                                      "Value": "{% $fastqIdMapIter %}"
+                                    },
+                                    {
+                                      "Name": "NEW_SAMPLE_NAME",
+                                      "Value": "{% $states.input.newSampleName %}"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "End": true,
+                          "Output": {
+                            "outputUri": "{% $outputUriMapIter %}"
+                          }
+                        }
+                      }
+                    },
+                    "End": true,
+                    "Items": "{% $fastqIdListMapIter %}",
+                    "ItemSelector": {
+                      "fastqId": "{% $states.context.Map.Item.Value %}"
+                    },
+                    "Output": {
+                      "outputUriList": "{% $states.result.(outputUri) %}"
+                    }
+                  }
+                }
+              },
+              "End": true,
+              "Label": "Foreachfastqbatched",
+              "MaxConcurrency": 1000,
+              "ItemBatcher": {
+                "MaxItemsPerBatch": 10,
+                "BatchInput": {
+                  "itemCount": "{% $count($states.input.fastqIdList) %}",
+                  "cacheUri": "{% $readyEventDetail.payload.data.engineParameters.cacheUri %}"
+                }
+              },
+              "Items": "{% $states.input.fastqIdList %}",
+              "Output": {
+                "outputUriList": "{% $states.result.(outputUriList) ~> $reduce($append) %}"
               }
             }
           }
         },
         {
-          "StartAt": "Get Default Pipeline Id for Workflow Version",
+          "StartAt": "Placeholder (multiqc)",
           "States": {
-            "Get Default Pipeline Id for Workflow Version": {
-              "Type": "Task",
-              "Arguments": {
-                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $bclconvertInteropQcReadyEventDetail.workflow.version %}"
-              },
-              "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+            "Placeholder (multiqc)": {
+              "Type": "Pass",
               "End": true,
-              "Output": {
-                "defaultPipelineId": "{% $states.result.Parameter.Value %}"
-              }
+              "Output": {}
             }
           }
         }
       ],
-      "Output": {
-        "defaultProjectId": "{% $states.result[0].defaultProjectId %}",
-        "defaultPipelineId": "{% $states.result[1].defaultPipelineId %}"
+      "Assign": {
+        "parquetFileUriList": "{% $states.result ~> $merge %}"
       }
     },
     "Convert BCLConvert Ready Event to ICAv2 WES Event": {
@@ -57,9 +235,8 @@
       "Arguments": {
         "FunctionName": "${__bclconvert_interopqc_ready_to_icav2_wes_request_lambda_function_arn__}",
         "Payload": {
-          "bclconvertInteropQcReadyEventDetail": "{% $bclconvertInteropQcReadyEventDetail %}",
-          "defaultPipelineId": "{% $states.input.defaultPipelineId %}",
-          "defaultProjectId": "{% $states.input.defaultProjectId %}"
+          "readyEventDetail": "{% $readyEventDetail %}",
+          "parquetFileUriList": "{% $parquetFileUriList %}"
         }
       },
       "Retry": [

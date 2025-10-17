@@ -1,19 +1,31 @@
 import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { LambdaNameList, LambdaObject } from '../lambda/interfaces';
+import { LambdaName, LambdaObject } from '../lambda/interfaces';
 import { SsmParameterPaths } from '../ssm/interfaces';
+import { EcsFargateTaskConstruct } from '@orcabus/platform-cdk-constructs/ecs';
+import { ContainerName } from '../ecs/interfaces';
 
 /**
  * Step Function Interfaces
  */
-export type StateMachineNameList =
+export type StateMachineName =
+  // Populate Draft Data Events
+  | 'populateDraftData'
+  // Validate Draft Data
+  | 'validateDraftToReady'
+  // Ready to ICAv2 WES
   | 'readyToIcav2WesSubmitEvent'
-  | 'bsshFastqToAwsWrscToReadyWrsc'
+  // BSSH Fastq to WRSC event
   | 'icav2WesEventToWrscEvent';
 
-export const stateMachineNameList: StateMachineNameList[] = [
+export const stateMachineNameList: StateMachineName[] = [
+  // Populate Draft Data Events
+  'populateDraftData',
+  // Validate Draft Data
+  'validateDraftToReady',
+  // Ready to ICAv2 WES
   'readyToIcav2WesSubmitEvent',
-  'bsshFastqToAwsWrscToReadyWrsc',
+  // BSSH Fastq to WRSC event
   'icav2WesEventToWrscEvent',
 ];
 
@@ -24,16 +36,23 @@ export interface StepFunctionRequirements {
 
   // SSM Stuff
   needsSsmParameterStoreAccess?: boolean;
+
+  // Needs ECS stuff
+  needsEcsTaskExecutionPermission?: boolean;
+
+  // Needs Distributed Map stuff
+  needsDistributedMapPermissions?: boolean;
 }
 
 export interface StepFunctionInput {
-  stateMachineName: StateMachineNameList;
+  stateMachineName: StateMachineName;
 }
 
 export interface BuildStepFunctionProps extends StepFunctionInput {
   lambdaObjects: LambdaObject[];
   eventBus: IEventBus;
   ssmParameterPaths: SsmParameterPaths;
+  ecsFargateTaskObjects: EcsFargateTaskConstruct[];
   isNewWorkflowManagerDeployed: boolean;
 }
 
@@ -45,26 +64,48 @@ export type WireUpPermissionsProps = BuildStepFunctionProps & StepFunctionObject
 
 export type BuildStepFunctionsProps = Omit<BuildStepFunctionProps, 'stateMachineName'>;
 
-export const stepFunctionsRequirementsMap: Record<StateMachineNameList, StepFunctionRequirements> =
-  {
-    readyToIcav2WesSubmitEvent: {
-      needsEventPutPermission: true,
-      needsSsmParameterStoreAccess: true,
-    },
-    bsshFastqToAwsWrscToReadyWrsc: {
-      needsEventPutPermission: true,
-      needsSsmParameterStoreAccess: true,
-    },
-    icav2WesEventToWrscEvent: {
-      needsEventPutPermission: true,
-    },
-  };
+export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunctionRequirements> = {
+  // Populate Draft Data Events
+  populateDraftData: {
+    needsEventPutPermission: true,
+    needsSsmParameterStoreAccess: true,
+  },
+  // Validate Draft Data
+  validateDraftToReady: {
+    needsEventPutPermission: true,
+  },
+  // Ready to ICAv2 WES
+  readyToIcav2WesSubmitEvent: {
+    needsEventPutPermission: true,
+    needsEcsTaskExecutionPermission: true,
+  },
+  // ICAv2 WES to WRSC event
+  icav2WesEventToWrscEvent: {
+    needsEventPutPermission: true,
+  },
+};
 
-export const stepFunctionToLambdasMap: Record<StateMachineNameList, LambdaNameList[]> = {
-  readyToIcav2WesSubmitEvent: ['bclconvertInteropqcReadyToIcav2WesRequest'],
-  bsshFastqToAwsWrscToReadyWrsc: [
-    'generateWorkflowRunNameAndPortalRunId',
-    'bsshFastqCopySucceededToBclconvertInteropQcReady',
+export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
+  // Populate Draft Data Events
+  populateDraftData: ['getFastqIdsInInstrumentRunId', 'validateDraftDataCompleteSchema'],
+  // Validate Draft Data
+  validateDraftToReady: ['generateBclconvertInteropqcDraftDataEvent'],
+  // Ready to ICAv2 WES
+  readyToIcav2WesSubmitEvent: [
+    'bclconvertInteropqcReadyToIcav2WesRequest',
+    'convertS3UriToIcav2Uri',
   ],
+  // ICAv2 WES to WRSC event
   icav2WesEventToWrscEvent: ['convertIcav2WesStateChangeEventToWrscEvent'],
+};
+
+export const stepFunctionToContainerNamesMap: Record<StateMachineName, ContainerName[]> = {
+  // Populate Draft Data Events
+  populateDraftData: [],
+  // Validate Draft Data
+  validateDraftToReady: [],
+  // Ready to ICAv2 WES
+  readyToIcav2WesSubmitEvent: ['resampleMultiqcParquetFile'],
+  // ICAv2 WES to WRSC event
+  icav2WesEventToWrscEvent: [],
 };
