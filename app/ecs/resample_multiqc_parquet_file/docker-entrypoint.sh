@@ -22,7 +22,7 @@ if [[ -z "${HOSTNAME_SSM_PARAMETER_NAME:-}" ]]; then
 fi
 
 if [[ -z "${ORCABUS_TOKEN_SECRET_ID:-}" ]]; then
-  echo_stderr "SOURCE_DATA_ID is not set. Exiting."
+  echo_stderr "ORCABUS_TOKEN_SECRET_ID is not set. Exiting."
   exit 1
 fi
 
@@ -51,14 +51,13 @@ if [[ -z "${NEW_SAMPLE_NAME:-}" ]]; then
   exit 1
 fi
 
-HOST_NAME="$( \
+HOSTNAME="$( \
   aws ssm get-parameter \
 	--name "${HOSTNAME_SSM_PARAMETER_NAME}" \
 	--output json | \
   jq --raw-output \
     '.Parameter.Value' \
 )"
-export HOST_NAME
 
 ORCABUS_TOKEN="$( \
   aws secretsmanager get-secret-value \
@@ -68,7 +67,6 @@ ORCABUS_TOKEN="$( \
   jq --raw-output \
     'fromjson | .id_token' \
 )"
-export ORCABUS_TOKEN
 
 # Set ICAV2_ACCESS_TOKEN environment variable
 ICAV2_ACCESS_TOKEN="$( \
@@ -104,7 +102,7 @@ input_object_id="$( \
   	 ' \
     )" \
     --get \
-    --url "https://file.${HOST_NAME}/api/v1/s3" | \
+    --url "https://file.${HOSTNAME}/api/v1/s3" | \
   jq --raw-output \
     '
       .results[0].s3ObjectId
@@ -117,7 +115,7 @@ input_presigned_url="$( \
     --request 'GET' \
     --header "Accept: application/json" \
 	--header "Authorization: Bearer ${ORCABUS_TOKEN}" \
-    --url "https://file.prod.umccr.org/api/v1/s3/presign/${input_object_id}?responseContentDisposition=inline" \
+    --url "https://file.${HOSTNAME}.umccr.org/api/v1/s3/presign/${input_object_id}?responseContentDisposition=inline" \
 )"
 
 # Download the input file using the presigned url

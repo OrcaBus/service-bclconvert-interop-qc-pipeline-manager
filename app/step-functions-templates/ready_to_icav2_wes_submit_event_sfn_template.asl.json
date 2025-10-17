@@ -146,11 +146,11 @@
                           "Arguments": {
                             "LaunchType": "FARGATE",
                             "Cluster": "${__resample_multiqc_parquet_file_cluster_arn__}",
-                            "TaskDefinition": "${__resample_multiqc_parquet_file_definition_arn__}",
+                            "TaskDefinition": "${__resample_multiqc_parquet_file_task_definition_arn__}",
                             "NetworkConfiguration": {
                               "AwsvpcConfiguration": {
-                                "Subnets": "{% $split('${__subnets__}', ',') %}",
-                                "SecurityGroups": "{% [ '${__security_group__}' ] %}"
+                                "Subnets": "{% $split('${__resample_multiqc_parquet_file_subnets__}', ',') %}",
+                                "SecurityGroups": "{% [ '${__resample_multiqc_parquet_file_security_group__}' ] %}"
                               }
                             },
                             "Overrides": {
