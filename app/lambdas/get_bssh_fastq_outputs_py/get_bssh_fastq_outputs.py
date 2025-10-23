@@ -52,7 +52,7 @@ def handler(event, context):
     # Get the payload
     bssh_payload = get_latest_payload_from_workflow_run(bssh_workflow['orcabusId'])
 
-    # Get the
+    # Get the output directories for BCL Convert report and InterOp data
     return {
         "bclConvertReportDirectory": bssh_payload['data']['engineParameters']['outputUri'] + "Reports/",
         "interOpDirectory": bssh_payload['data']['engineParameters']['outputUri'] + "InterOp/"
