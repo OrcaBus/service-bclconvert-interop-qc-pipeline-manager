@@ -138,7 +138,12 @@ def handler(event, context) -> Dict[str, Any]:
                 ))
             },
             "engineParameters": event_detail_body['payload']['data']['engineParameters'],
-            "tags": event_detail_body['payload']['data']['tags']
+            "tags": {
+                # Copy all other tags from the event detail body
+                **event_detail_body['payload']['data']['tags'],
+                # Add the portal run ID to the tags
+                "portalRunId": event_detail_body['portalRunId']
+            }
         }
     }
 
