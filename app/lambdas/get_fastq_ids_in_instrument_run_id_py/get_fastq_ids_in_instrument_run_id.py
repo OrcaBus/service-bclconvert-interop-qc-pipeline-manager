@@ -17,7 +17,10 @@ def handler(event, context):
     :return:
     """
     return {
-        "fastqIdList": get_fastqs_in_instrument_run_id(
-            instrument_run_id=event['instrumentRunId']
-        )
+        "fastqIdList": list(map(
+            lambda fastq_obj_iter_: fastq_obj_iter_['id'],
+            get_fastqs_in_instrument_run_id(
+                instrument_run_id=event['instrumentRunId']
+            )
+        ))
     }

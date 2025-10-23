@@ -12,7 +12,10 @@ from textwrap import dedent
 from urllib.parse import urlparse, urlunparse
 
 # Wrapica imports
-from wrapica.project_data import convert_uri_to_project_data_obj, create_file_with_upload_url
+from wrapica.project_data import (
+    convert_uri_to_project_data_obj,
+    create_file_with_upload_url
+)
 
 # Globals
 MULTIQC_PARQUET_NAME = "multiqc.parquet"
@@ -160,3 +163,7 @@ def main():
     run_shell_script(
         shell_script_path=shell_script_path,
     )
+
+
+if __name__ == "__main__":
+    main()

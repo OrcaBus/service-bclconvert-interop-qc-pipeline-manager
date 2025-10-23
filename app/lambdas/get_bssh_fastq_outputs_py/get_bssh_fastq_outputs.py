@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+"""
+Get the bssh fastq outputs from a given directory.
+
+Given the instrumentRunId, look through the bssh to aws s3 to get the interop and reports output
+
+"""
+
+# Imports
+
+# Layer Imports
+from orcabus_api_tools.workflow import (
+    list_workflow_runs_by_workflow_name,
+    get_latest_payload_from_workflow_run
+)
+
+# Globals
+BSSH_TO_AWS_S3_WORKFLOW_NAME = "bssh-to-aws-s3"
+
+
+
+def handler(event, context):
+    """
+    Get the bssh fastq outputs from a given directory
+    :param event:
+    :param context:
+    :return:
+    """
+
+    # Get inputs
+    instrument_run_id = event.get("instrumentRunId")
+
+    # Get the bssh workflow object
+    try:
+        bssh_workflow = next(filter(
+            lambda workflow_run_iter_: (
+                get_latest_payload_from_workflow_run(workflow_run_iter_['orcabusId']).get('data', {}).get('inputs', {}).get('instrumentRunId', "") == instrument_run_id and
+                workflow_run_iter_['currentState']['status'] == 'SUCCEEDED'
+            ),
+            sorted(
+                list_workflow_runs_by_workflow_name(
+                    workflow_name=BSSH_TO_AWS_S3_WORKFLOW_NAME
+                ),
+                key=lambda workflow_run_iter_: workflow_run_iter_['orcabusId'],
+                reverse=True
+            )
+        ))
+    except StopIteration:
+        return {}
+
+    # Get the payload
+    bssh_payload = get_latest_payload_from_workflow_run(bssh_workflow['orcabusId'])
+
+    # Get the output directories for BCL Convert report and InterOp data
+    return {
+        "bclConvertReportDirectory": bssh_payload['data']['engineParameters']['outputUri'] + "Reports/",
+        "interOpDirectory": bssh_payload['data']['engineParameters']['outputUri'] + "InterOp/"
+    }

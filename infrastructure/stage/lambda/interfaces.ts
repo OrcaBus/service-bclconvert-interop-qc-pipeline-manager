@@ -8,6 +8,8 @@ export type LambdaName =
   | 'getFastqIdsInInstrumentRunId'
   | 'validateDraftDataCompleteSchema'
   // Draft to Ready
+  | 'getBsshFastqOutputs'
+  | 'getMultiqcParquetOutputsFromFastqIdList'
   | 'generateBclconvertInteropqcDraftDataEvent'
   // Ready to ICAv2 WES
   | 'bclconvertInteropqcReadyToIcav2WesRequest'
@@ -20,6 +22,8 @@ export const lambdaNameList: LambdaName[] = [
   'getFastqIdsInInstrumentRunId',
   'validateDraftDataCompleteSchema',
   // Draft to Ready
+  'getBsshFastqOutputs',
+  'getMultiqcParquetOutputsFromFastqIdList',
   'generateBclconvertInteropqcDraftDataEvent',
   // Ready to ICAv2 WES
   'bclconvertInteropqcReadyToIcav2WesRequest',
@@ -47,6 +51,12 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsSchemaRegistryAccess: true,
   },
   // Draft to Ready
+  getBsshFastqOutputs: {
+    needsOrcabusApiTools: true,
+  },
+  getMultiqcParquetOutputsFromFastqIdList: {
+    needsOrcabusApiTools: true,
+  },
   generateBclconvertInteropqcDraftDataEvent: {
     needsOrcabusApiTools: true,
   },

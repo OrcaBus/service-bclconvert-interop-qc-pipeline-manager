@@ -18,6 +18,8 @@ import {
   EVENT_SOURCE,
   FASTQ_SYNC_DETAIL_TYPE,
   ICAV2_WES_REQUEST_DETAIL_TYPE,
+  PAYLOAD_VERSION,
+  READY_STATUS,
   STEP_FUNCTIONS_DIR,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
   WORKFLOW_RUN_UPDATE_DETAIL_TYPE,
@@ -56,11 +58,13 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
       WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE;
     definitionSubstitutions['__workflow_run_update_event_detail_type__'] =
       WORKFLOW_RUN_UPDATE_DETAIL_TYPE;
-    definitionSubstitutions['__event_source__'] = EVENT_SOURCE;
+    definitionSubstitutions['__stack_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__icav2_wes_request_detail_type__'] = ICAV2_WES_REQUEST_DETAIL_TYPE;
     definitionSubstitutions['__fastq_sync_detail_type__'] = FASTQ_SYNC_DETAIL_TYPE;
     definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
       props.isNewWorkflowManagerDeployed.toString();
+    definitionSubstitutions['__default_payload_version__'] = PAYLOAD_VERSION;
+    definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
   }
 
   if (sfnRequirements.needsSsmParameterStoreAccess) {
