@@ -54,6 +54,30 @@ export function buildIcav2WesEventStateChangeToWrscSfnTarget(
 export function buildAllEventBridgeTargets(scope: Construct, props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
+      // Populate draft data
+      case 'draftLegacyToPopulateDraftDataSfnTarget': {
+        buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
+          eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraftLegacy'
+          )?.ruleObject,
+          stateMachineObj: props.stepFunctionObjects.find(
+            (sfnObject) => sfnObject.stateMachineName === 'populateDraftData'
+          )?.sfnObject,
+        });
+        break;
+      }
+      case 'draftToPopulateDraftDataSfnTarget': {
+        buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
+          eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraft'
+          )?.ruleObject,
+          stateMachineObj: props.stepFunctionObjects.find(
+            (sfnObject) => sfnObject.stateMachineName === 'populateDraftData'
+          )?.sfnObject,
+        });
+        break;
+      }
+
       // Validate draft data
       case 'draftLegacyToValidateDraftSfnTarget': {
         buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{

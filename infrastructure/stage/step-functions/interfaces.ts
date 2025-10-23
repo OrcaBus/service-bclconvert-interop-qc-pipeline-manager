@@ -69,6 +69,7 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
   populateDraftData: {
     needsEventPutPermission: true,
     needsSsmParameterStoreAccess: true,
+    needsDistributedMapPermissions: true,
   },
   // Validate Draft Data
   validateDraftToReady: {
@@ -78,6 +79,7 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
   readyToIcav2WesSubmitEvent: {
     needsEventPutPermission: true,
     needsEcsTaskExecutionPermission: true,
+    needsDistributedMapPermissions: true,
   },
   // ICAv2 WES to WRSC event
   icav2WesEventToWrscEvent: {
@@ -87,9 +89,15 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
 
 export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
   // Populate Draft Data Events
-  populateDraftData: ['getFastqIdsInInstrumentRunId', 'validateDraftDataCompleteSchema'],
+  populateDraftData: [
+    'getFastqIdsInInstrumentRunId',
+    'getBsshFastqOutputs',
+    'getMultiqcParquetOutputsFromFastqIdList',
+    'validateDraftDataCompleteSchema',
+    'generateBclconvertInteropqcDraftDataEvent',
+  ],
   // Validate Draft Data
-  validateDraftToReady: ['generateBclconvertInteropqcDraftDataEvent'],
+  validateDraftToReady: ['validateDraftDataCompleteSchema'],
   // Ready to ICAv2 WES
   readyToIcav2WesSubmitEvent: [
     'bclconvertInteropqcReadyToIcav2WesRequest',

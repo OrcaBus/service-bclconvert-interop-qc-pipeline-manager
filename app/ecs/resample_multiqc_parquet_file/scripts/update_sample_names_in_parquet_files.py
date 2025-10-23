@@ -53,7 +53,11 @@ def recursively_replace_name(d, old_name, new_name):
             for i in d
         ]
     elif isinstance(d, str):
-        return new_name if d == old_name else d
+        return (
+            new_name
+            if d == old_name
+            else d
+        )
     return d
 
 
@@ -70,15 +74,13 @@ def update_plot_input(
     :return:
     """
     return json.dumps(
-        list(map(
-            lambda x: recursively_replace_name(
-                x,
-                old_sample_name,
-                new_sample_name
-            ),
-            json.loads(plot_input_data)
-        ))
+        recursively_replace_name(
+            d=json.loads(plot_input_data),
+            old_name=old_sample_name,
+            new_name=new_sample_name
+        )
     )
+
 
 
 def update_plot_input_row(

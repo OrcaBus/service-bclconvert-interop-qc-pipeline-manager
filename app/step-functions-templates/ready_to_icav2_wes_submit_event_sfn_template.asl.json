@@ -14,67 +14,39 @@
       "Next": "Convert BCLConvert Ready Event to ICAv2 WES Event",
       "Branches": [
         {
-          "StartAt": "Get fastqs in instrument run id",
+          "StartAt": "For each multiqc parquet file (batched)",
           "States": {
-            "Get fastqs in instrument run id": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Output": {
-                "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
-              },
-              "Arguments": {
-                "FunctionName": "${__get_fastq_ids_in_instrument_run_id_lambda_function_arn__}",
-                "Payload": {
-                  "instrumentRunId": "{% $readyEventDetail.payload.data.inputs.instrumentRunId %}"
-                }
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2,
-                  "JitterStrategy": "FULL"
-                }
-              ],
-              "Next": "For each fastq (batched)"
-            },
-            "For each fastq (batched)": {
+            "For each multiqc parquet file (batched)": {
               "Type": "Map",
               "ItemProcessor": {
                 "ProcessorConfig": {
                   "Mode": "DISTRIBUTED",
                   "ExecutionType": "STANDARD"
                 },
-                "StartAt": "Set vars fastq map (batched)",
+                "StartAt": "Set vars multiqc parquet file map (batched)",
                 "States": {
-                  "Set vars fastq map (batched)": {
+                  "Set vars multiqc parquet file map (batched)": {
                     "Type": "Pass",
-                    "Next": "For each fastq",
+                    "Next": "For each multiqc parquet file",
                     "Assign": {
                       "itemCountMapIter": "{% $states.input.BatchInput.itemCount %}",
-                      "fastqIdListMapIter": "{% $states.input.Items %}",
+                      "multiqcParquetFilesMapIter": "{% $states.input.Items %}",
                       "cacheUriMapIter": "{% $states.input.BatchInput.cacheUri %}"
                     }
                   },
-                  "For each fastq": {
+                  "For each multiqc parquet file": {
                     "Type": "Map",
                     "ItemProcessor": {
                       "ProcessorConfig": {
                         "Mode": "INLINE"
                       },
-                      "StartAt": "Set vars fastq map",
+                      "StartAt": "Set vars multiqc parquet file map",
                       "States": {
-                        "Set vars fastq map": {
+                        "Set vars multiqc parquet file map": {
                           "Type": "Pass",
                           "Next": "Jitter ecs task",
                           "Assign": {
-                            "fastqIdMapIter": "{% $states.input.fastqId %}",
+                            "multiqcParquetFileUriMapIter": "{% $states.input %}",
                             "outputUriMapIter": "{% $cacheUriMapIter & $states.input.fastqId & '/' & 'multiqc.parquet' %}"
                           }
                         },
@@ -106,43 +78,14 @@
                               "JitterStrategy": "FULL"
                             }
                           ],
-                          "Next": "Get fastq object",
+                          "Next": "Resample multiqc file and copy to cache uri",
                           "Assign": {
                             "icav2UriMapIter": "{% $states.result.Payload.icav2Uri %}"
                           }
                         },
-                        "Get fastq object": {
-                          "Type": "Task",
-                          "Resource": "arn:aws:states:::lambda:invoke",
-                          "Arguments": {
-                            "FunctionName": "${__get_fastq_object_from_fastq_id_lambda_function_arn__}",
-                            "Payload": {
-                              "fastqId": "{% $fastqIdMapIter %}"
-                            }
-                          },
-                          "Retry": [
-                            {
-                              "ErrorEquals": [
-                                "Lambda.ServiceException",
-                                "Lambda.AWSLambdaException",
-                                "Lambda.SdkClientException",
-                                "Lambda.TooManyRequestsException"
-                              ],
-                              "IntervalSeconds": 1,
-                              "MaxAttempts": 3,
-                              "BackoffRate": 2,
-                              "JitterStrategy": "FULL"
-                            }
-                          ],
-                          "Output": {
-                            "multiqcParquetUri": "{% $states.result.Payload.fastqObj.qc.sequaliReports.multiqcParquet.s3Uri %}",
-                            "newSampleName": "{% $states.result.Payload.fastqObj.library.libraryId & '__' & 'L' & $string($states.result.Payload.fastqObj.lane) %}"
-                          },
-                          "Next": "Resample multiqc file and copy to cache uri"
-                        },
                         "Resample multiqc file and copy to cache uri": {
                           "Type": "Task",
-                          "Resource": "arn:aws:states:::ecs:runTask",
+                          "Resource": "arn:aws:states:::ecs:runTask.sync",
                           "Arguments": {
                             "LaunchType": "FARGATE",
                             "Cluster": "${__resample_multiqc_parquet_file_cluster_arn__}",
@@ -160,7 +103,7 @@
                                   "Environment": [
                                     {
                                       "Name": "INPUT_URI",
-                                      "Value": "{% $states.input.multiqcParquetUri %}"
+                                      "Value": "{% $multiqcParquetFileUriMapIter.multiqcParquetFileUri %}"
                                     },
                                     {
                                       "Name": "OUTPUT_URI",
@@ -168,11 +111,11 @@
                                     },
                                     {
                                       "Name": "OLD_SAMPLE_NAME",
-                                      "Value": "{% $fastqIdMapIter %}"
+                                      "Value": "{% $multiqcParquetFileUriMapIter.fastqId %}"
                                     },
                                     {
                                       "Name": "NEW_SAMPLE_NAME",
-                                      "Value": "{% $states.input.newSampleName %}"
+                                      "Value": "{% [\n  $multiqcParquetFileUriMapIter.libraryId,\n  'L' & $string($multiqcParquetFileUriMapIter.lane)\n] ~> $join('_') %}"
                                     }
                                   ]
                                 }
@@ -187,10 +130,7 @@
                       }
                     },
                     "End": true,
-                    "Items": "{% $fastqIdListMapIter %}",
-                    "ItemSelector": {
-                      "fastqId": "{% $states.context.Map.Item.Value %}"
-                    },
+                    "Items": "{% $multiqcParquetFilesMapIter %}",
                     "Output": {
                       "outputUriList": "{% $states.result.(outputUri) %}"
                     }
@@ -198,7 +138,7 @@
                 }
               },
               "End": true,
-              "Label": "Foreachfastqbatched",
+              "Label": "Foreachmultiqcparquetfilebatched",
               "MaxConcurrency": 1000,
               "ItemBatcher": {
                 "MaxItemsPerBatch": 10,
@@ -207,7 +147,7 @@
                   "cacheUri": "{% $readyEventDetail.payload.data.engineParameters.cacheUri %}"
                 }
               },
-              "Items": "{% $states.input.fastqIdList %}",
+              "Items": "{% $readyEventDetail.payload.data.inputs.additionalMultiQcDataFiles %}",
               "Output": {
                 "outputUriList": "{% $states.result.(outputUriList) ~> $reduce($append) %}"
               }
@@ -226,7 +166,7 @@
         }
       ],
       "Assign": {
-        "parquetFileUriList": "{% $states.result ~> $merge %}"
+        "parquetFileUriList": "{% ([ $states.result ~> $merge ]) ~> $lookup('outputUriList') %}"
       }
     },
     "Convert BCLConvert Ready Event to ICAv2 WES Event": {
@@ -267,7 +207,7 @@
             "Detail": "{% $states.input.icav2WesRequestEventDetail %}",
             "DetailType": "${__icav2_wes_request_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__event_source__}"
+            "Source": "${__stack_source__}"
           }
         ]
       },

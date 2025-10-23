@@ -55,7 +55,7 @@
     },
     "Get engine parameters": {
       "Type": "Parallel",
-      "Next": "Prime inputs",
+      "Next": "Get inputs",
       "Branches": [
         {
           "StartAt": "Has Project ID",
@@ -149,7 +149,7 @@
             "Get default output uri prefix": {
               "Type": "Task",
               "Arguments": {
-                "Name": "${__default_output_uri_prefix_ssm_parameter_name__}"
+                "Name": "${__workflow_outputs_prefix_ssm_parameter_name__}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -183,7 +183,7 @@
             "Get default logs uri prefix": {
               "Type": "Task",
               "Arguments": {
-                "Name": "${__default_logs_uri_prefix_ssm_parameter_name__}"
+                "Name": "${__workflow_logs_prefix_ssm_parameter_name__}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -217,7 +217,7 @@
             "Get default cache uri prefix": {
               "Type": "Task",
               "Arguments": {
-                "Name": "${__default_cache_uri_prefix_ssm_parameter_name__}"
+                "Name": "${__workflow_cache_prefix_ssm_parameter_name__}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -232,7 +232,7 @@
         "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $draftEngineParameters, $merge($states.result) ] ~> $merge  %}"
       }
     },
-    "Prime inputs": {
+    "Get inputs": {
       "Type": "Parallel",
       "Next": "Generate BCLConvert InterOp QC Draft Data Event",
       "Branches": [
@@ -248,7 +248,7 @@
               "Arguments": {
                 "FunctionName": "${__get_fastq_ids_in_instrument_run_id_lambda_function_arn__}",
                 "Payload": {
-                  "instrumentRunId": "{% $draftInputs.instrumentRunId %}"
+                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}"
                 }
               },
               "Retry": [
@@ -274,8 +274,15 @@
                   "Mode": "DISTRIBUTED",
                   "ExecutionType": "STANDARD"
                 },
-                "StartAt": "Jitter",
+                "StartAt": "Set local vars",
                 "States": {
+                  "Set local vars": {
+                    "Type": "Pass",
+                    "Next": "Jitter",
+                    "Assign": {
+                      "fastqIdListMapIter": "{% $states.input.Items %}"
+                    }
+                  },
                   "Jitter": {
                     "Type": "Wait",
                     "Seconds": "{% $round($random() * $states.input.BatchInput.itemCount) + 1 %}",
@@ -290,7 +297,7 @@
                           "Detail": {
                             "taskToken": "{% $states.context.Task.Token %}",
                             "payload": {
-                              "fastqIdList": "{% $states.input.Items %}",
+                              "fastqIdList": "{% $fastqIdListMapIter %}",
                               "requirements": {
                                 "hasQc": true
                               },
@@ -303,7 +310,35 @@
                         }
                       ]
                     },
-                    "End": true
+                    "Next": "Get multiqc parquet outputs"
+                  },
+                  "Get multiqc parquet outputs": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::lambda:invoke",
+                    "Arguments": {
+                      "FunctionName": "${__get_multiqc_parquet_outputs_from_fastq_id_list_lambda_function_arn__}",
+                      "Payload": {
+                        "fastqIdList": "{% $fastqIdListMapIter %}"
+                      }
+                    },
+                    "Retry": [
+                      {
+                        "ErrorEquals": [
+                          "Lambda.ServiceException",
+                          "Lambda.AWSLambdaException",
+                          "Lambda.SdkClientException",
+                          "Lambda.TooManyRequestsException"
+                        ],
+                        "IntervalSeconds": 1,
+                        "MaxAttempts": 3,
+                        "BackoffRate": 2,
+                        "JitterStrategy": "FULL"
+                      }
+                    ],
+                    "End": true,
+                    "Output": {
+                      "multiqcOutputObject": "{% $states.result.Payload.multiqcOutputObject %}"
+                    }
                   }
                 }
               },
@@ -316,20 +351,51 @@
                   "itemCount": "{% $count($states.input.fastqIdList) %}"
                 }
               },
-              "Items": "{% $states.input.fastqIdList %}"
+              "Items": "{% $states.input.fastqIdList %}",
+              "Output": {
+                "additionalMultiQcDataFiles": "{% [ $states.result.(multiqcOutputObject) ] %}"
+              }
             }
           }
         },
         {
-          "StartAt": "Inputs Placeholder",
+          "StartAt": "Get BSSH Fastq Copy output",
           "States": {
-            "Inputs Placeholder": {
-              "Type": "Pass",
-              "End": true
+            "Get BSSH Fastq Copy output": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__get_bssh_fastq_outputs_lambda_function_arn__}",
+                "Payload": {
+                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true,
+              "Output": {
+                "interOpDirectory": "{% $states.result.Payload.interOpDirectory %}",
+                "bclConvertReportDirectory": "{% $states.result.Payload.bclConvertReportDirectory %}"
+              }
             }
           }
         }
-      ]
+      ],
+      "Assign": {
+        "inputs": "{% [\n  /* Force the instrument run id value from the tags */\n  {\n    \"instrumentRunId\": $draftTags.instrumentRunId\n  },\n  /* Then add in the draft inputs */\n  $draftInputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
+      }
     },
     "Generate BCLConvert InterOp QC Draft Data Event": {
       "Type": "Task",
@@ -337,8 +403,8 @@
       "Arguments": {
         "FunctionName": "${__generate_bclconvert_interopqc_draft_data_event_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $portalRunId %}",
-          "inputs": "{% $draftInputs %}",
+          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "inputs": "{% $inputs %}",
           "tags": "{% $draftTags %}",
           "engineParameters": "{% $engineParameters %}"
         }
@@ -367,7 +433,7 @@
       "Choices": [
         {
           "Next": "Push BCLConvert InterOp QC Draft Event",
-          "Condition": "{% /* ${__new_workflow_manager_is_deployed__} */ false %}",
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
           "Comment": "New workflow manager is deployed"
         }
       ],
@@ -382,7 +448,7 @@
             "Detail": "{% $states.input.eventDetail %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__event_source__}"
+            "Source": "${__stack_source__}"
           }
         ]
       },
@@ -397,7 +463,7 @@
             "Detail": "{% $states.input.eventDetail ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
             "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__event_source__}"
+            "Source": "${__stack_source__}"
           }
         ]
       },

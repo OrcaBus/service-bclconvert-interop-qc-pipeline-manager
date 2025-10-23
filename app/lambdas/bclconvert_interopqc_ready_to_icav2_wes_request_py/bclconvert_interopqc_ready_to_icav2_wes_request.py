@@ -111,7 +111,7 @@ def handler(event, context) -> Dict[str, Any]:
     :return:
     """
     event_detail_body = event['readyEventDetail']
-    parquet_file_uri_list = event_detail_body['parquetFileUriList']
+    parquet_file_uri_list = event['parquetFileUriList']
 
     # Extract the inputs from the event detail body
     return {
@@ -129,7 +129,7 @@ def handler(event, context) -> Dict[str, Any]:
                 },
                 "instrument_run_id": event_detail_body['payload']['data']['inputs']['instrumentRunId'],
                 # Add in the parquet file uris
-                "parquet_file_uris": list(map(
+                "additional_parquet_files": list(map(
                     lambda uri: {
                         "class": "File",
                         "location": uri

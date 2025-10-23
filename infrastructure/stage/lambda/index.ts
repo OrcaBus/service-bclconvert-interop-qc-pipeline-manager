@@ -23,8 +23,9 @@ function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
     timeout: Duration.seconds(60),
-    memorySize: 2048,
+    memorySize: lambdaRequirements.needsIcav2Tools ? 1024 : undefined,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
+    includeIcav2Layer: lambdaRequirements.needsIcav2Tools,
   });
 
   // AwsSolutions-L1 - We'll migrate to PYTHON_3_13 ASAP, soz

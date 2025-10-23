@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Set to fail
 set -euo pipefail
 
 # Quick function to log messages to stderr
@@ -92,14 +93,17 @@ input_object_id="$( \
     --header "Authorization: Bearer ${ORCABUS_TOKEN}" \
     --data "$( \
       jq --raw-output --null-input \
-  	 --arg bucket "${input_uri_bucket}" \
-  	 --arg key "${input_uri_key}" \
-  	 '
-  	   {
-  	     "bucket": $bucket,
-  	     "key": $key
-  	   }
-  	 ' \
+	   --arg bucket "${input_uri_bucket}" \
+	   --arg key "${input_uri_key}" \
+	   '
+		 {
+		   "bucket": $bucket,
+		   "key": $key
+		 } |
+		 to_entries |
+		 map("\(.key)=\(.value)") |
+		 join("&")
+	   ' \
     )" \
     --get \
     --url "https://file.${HOSTNAME}/api/v1/s3" | \
@@ -110,27 +114,32 @@ input_object_id="$( \
 )"
 
 # Get the presigned url for the input file
+# We still need to pipe into jq as the output is wrapped in quotes
 input_presigned_url="$( \
   curl --fail --silent --location --show-error \
     --request 'GET' \
     --header "Accept: application/json" \
 	--header "Authorization: Bearer ${ORCABUS_TOKEN}" \
-    --url "https://file.${HOSTNAME}.umccr.org/api/v1/s3/presign/${input_object_id}?responseContentDisposition=inline" \
+    --url "https://file.${HOSTNAME}/api/v1/s3/presign/${input_object_id}?responseContentDisposition=inline" | \
+  jq --raw-output \
 )"
 
 # Download the input file using the presigned url
+echo_stderr "Downloading input multiqc parquet file from presigned URL"
 wget --quiet \
   --output-document "multiqc.parquet" \
   "${input_presigned_url}"
 
 # Run the conversion (in-place)
+echo_stderr "Running sample name update from '${OLD_SAMPLE_NAME}' to '${NEW_SAMPLE_NAME}' in multiqc parquet file"
 uv run python3 scripts/update_sample_names_in_parquet_files.py \
-  --input-file "multiqc.parquet" \
-  --output-file "multiqc.parquet" \
+  --input-parquet-file "multiqc.parquet" \
+  --output-parquet-file "multiqc.parquet" \
   --old-sample-name "${OLD_SAMPLE_NAME}" \
   --new-sample-name "${NEW_SAMPLE_NAME}"
 
 # Upload the output file to the new location
+echo_stderr "Uploading updated multiqc parquet file to '${OUTPUT_URI}'"
 uv run python3 scripts/upload_file_to_icav2.py \
   --input-file "multiqc.parquet" \
   --output-uri "${OUTPUT_URI}"
