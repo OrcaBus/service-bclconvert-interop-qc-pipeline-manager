@@ -8,27 +8,21 @@ import { StepFunctionObject } from '../step-functions/interfaces';
  */
 export type EventBridgeTargetName =
   // Populate draft data event targets
-  | 'draftLegacyToPopulateDraftDataSfnTarget'
   | 'draftToPopulateDraftDataSfnTarget'
   // Validate draft to ready
-  | 'draftLegacyToValidateDraftSfnTarget'
   | 'draftToValidateDraftSfnTarget'
   // Ready to InterOp QC
   | 'readyToIcav2WesSubmiitedSfnTarget'
-  | 'readyToIcav2WesSubmiitedLegacySfnTarget'
   // Post submitted
   | 'icav2WesAnalysisStateChangeEventToWrscSfnTarget';
 
 export const eventBridgeTargetsNameList: EventBridgeTargetName[] = [
   // Populate draft data event targets
-  'draftLegacyToPopulateDraftDataSfnTarget',
   'draftToPopulateDraftDataSfnTarget',
   // Validate draft to ready
-  'draftLegacyToValidateDraftSfnTarget',
   'draftToValidateDraftSfnTarget',
   // Ready to InterOp QC
   'readyToIcav2WesSubmiitedSfnTarget',
-  'readyToIcav2WesSubmiitedLegacySfnTarget',
   // Post submitted
   'icav2WesAnalysisStateChangeEventToWrscSfnTarget',
 ];

@@ -18,7 +18,6 @@ import {
   ICAV2_WES_REQUEST_DETAIL_TYPE,
   ICAV2_WES_STATE_CHANGE_DETAIL_TYPE,
   SSM_PARAMETER_PATH_PREFIX,
-  NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
   WORKFLOW_CACHE_PREFIX,
   SSM_PARAMETER_PATH_CACHE_PREFIX,
 } from './constants';
@@ -101,8 +100,5 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
 
     // Secret stuff
     icav2AccessTokenSecretId: ICAV2_ACCESS_TOKEN_SECRET_ID[stage],
-
-    // Is new workflow manager deployed
-    isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],
   };
 };
