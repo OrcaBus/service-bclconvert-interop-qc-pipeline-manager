@@ -61,8 +61,6 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions['__stack_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__icav2_wes_request_detail_type__'] = ICAV2_WES_REQUEST_DETAIL_TYPE;
     definitionSubstitutions['__fastq_sync_detail_type__'] = FASTQ_SYNC_DETAIL_TYPE;
-    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
-      props.isNewWorkflowManagerDeployed.toString();
     definitionSubstitutions['__default_payload_version__'] = PAYLOAD_VERSION;
     definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
   }

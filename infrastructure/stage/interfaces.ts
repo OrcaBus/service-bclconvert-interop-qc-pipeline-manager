@@ -37,9 +37,6 @@ export interface StatelessApplicationStackConfig {
 
   // Secret stuff
   icav2AccessTokenSecretId: string;
-
-  // Is the new workflow manager deployed
-  isNewWorkflowManagerDeployed: boolean;
 }
 
 export type WorkflowVersionType = '1.3.1--1.25.2' | '1.5.0--1.31';

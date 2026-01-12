@@ -53,7 +53,6 @@ export interface BuildStepFunctionProps extends StepFunctionInput {
   eventBus: IEventBus;
   ssmParameterPaths: SsmParameterPaths;
   ecsFargateTaskObjects: EcsFargateTaskConstruct[];
-  isNewWorkflowManagerDeployed: boolean;
 }
 
 export interface StepFunctionObject extends StepFunctionInput {
