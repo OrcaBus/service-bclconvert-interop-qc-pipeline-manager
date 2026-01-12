@@ -55,7 +55,7 @@
     },
     "Get engine parameters": {
       "Type": "Parallel",
-      "Next": "Get inputs",
+      "Next": "Get fastq inputs",
       "Branches": [
         {
           "StartAt": "Has Project ID",
@@ -232,7 +232,7 @@
         "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $draftEngineParameters, $merge($states.result) ] ~> $merge  %}"
       }
     },
-    "Get inputs": {
+    "Get fastq inputs": {
       "Type": "Parallel",
       "Next": "Generate BCLConvert InterOp QC Draft Data Event",
       "Branches": [
@@ -344,7 +344,6 @@
               },
               "Label": "Iterateovereachfastqidbatched",
               "MaxConcurrency": 1000,
-              "End": true,
               "ItemBatcher": {
                 "MaxItemsPerBatch": 10,
                 "BatchInput": {
@@ -354,20 +353,17 @@
               "Items": "{% $states.input.fastqIdList %}",
               "Output": {
                 "additionalMultiQcDataFiles": "{% [ $states.result.(multiqcOutputObject) ] %}"
-              }
-            }
-          }
-        },
-        {
-          "StartAt": "Get BSSH Fastq Copy output",
-          "States": {
+              },
+              "Next": "Get BSSH Fastq Copy output"
+            },
             "Get BSSH Fastq Copy output": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Arguments": {
                 "FunctionName": "${__get_bssh_fastq_outputs_lambda_function_arn__}",
                 "Payload": {
-                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}"
+                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}",
+                  "libraryIdList": "{% [ $draftLibrariesList.(libraryId) ] %}"
                 }
               },
               "Retry": [
@@ -384,11 +380,22 @@
                   "JitterStrategy": "FULL"
                 }
               ],
-              "End": true,
               "Output": {
-                "interOpDirectory": "{% $states.result.Payload.interOpDirectory %}",
-                "bclConvertReportDirectory": "{% $states.result.Payload.bclConvertReportDirectory %}"
-              }
+                "interOpDirectory": "{% $states.result.Payload.interOpDirectory ? $states.result.Payload.interOpDirectory : null %}",
+                "bclConvertReportDirectory": "{% $states.result.Payload.bclConvertReportDirectory ? $states.result.Payload.bclConvertReportDirectory : null %}",
+                "additionalMultiQcDataFiles": "{% $states.input.additionalMultiQcDataFiles %}"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Pass",
+          "States": {
+            "Pass": {
+              "Type": "Pass",
+              "Output": {},
+              "End": true
             }
           }
         }
