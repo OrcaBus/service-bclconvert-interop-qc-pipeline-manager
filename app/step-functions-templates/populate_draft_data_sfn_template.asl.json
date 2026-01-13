@@ -6,13 +6,13 @@
       "Type": "Pass",
       "Next": "Check payload valid",
       "Assign": {
-        "draftDetail": "{% $states.input %}",
-        "draftLibrariesList": "{% $states.input.libraries %}",
-        "draftPayload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
-        "draftData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
-        "draftEngineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
-        "draftTags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
-        "draftInputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
+        "detail": "{% $states.input %}",
+        "librariesList": "{% $states.input.libraries %}",
+        "payload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
+        "data": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
+        "engineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
+        "tags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
+        "inputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
       }
     },
     "Check payload valid": {
@@ -21,7 +21,7 @@
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $draftData %}"
+        "Payload": "{% $data %}"
       },
       "Retry": [
         {
@@ -65,7 +65,7 @@
               "Choices": [
                 {
                   "Next": "Use provided project id",
-                  "Condition": "{% $draftEngineParameters.projectId ? true : false %}",
+                  "Condition": "{% $engineParameters.projectId ? true : false %}",
                   "Comment": "Project ID Provided"
                 }
               ],
@@ -75,7 +75,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "projectId": "{% $draftEngineParameters.projectId %}"
+                "projectId": "{% $engineParameters.projectId %}"
               }
             },
             "Get Default Project Id": {
@@ -99,7 +99,7 @@
               "Choices": [
                 {
                   "Next": "Use provided pipeline id",
-                  "Condition": "{% ($draftEngineParameters.pipelineId ? $draftEngineParameters.pipelineId : $draftDetail.workflow.executionEnginePipelineId ) ? true : false %}",
+                  "Condition": "{% ($engineParameters.pipelineId ? $engineParameters.pipelineId : $detail.workflow.executionEnginePipelineId ) ? true : false %}",
                   "Comment": "Pipeline ID Provided"
                 }
               ],
@@ -109,13 +109,13 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "pipelineId": "{% $draftEngineParameters.pipelineId ? $draftEngineParameters.pipelineId : $draftDetail.workflow.executionEnginePipelineId %}"
+                "pipelineId": "{% $engineParameters.pipelineId ? $engineParameters.pipelineId : $detail.workflow.executionEnginePipelineId %}"
               }
             },
             "Get default pipeline id": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $draftDetail.workflow.version %}"
+                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $detail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -133,7 +133,7 @@
               "Choices": [
                 {
                   "Next": "Use provided output uri",
-                  "Condition": "{% $draftEngineParameters.outputUri ? true : false %}",
+                  "Condition": "{% $engineParameters.outputUri ? true : false %}",
                   "Comment": "Output URI Provided"
                 }
               ],
@@ -143,7 +143,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "outputUri": "{% $draftEngineParameters.outputUri %}"
+                "outputUri": "{% $engineParameters.outputUri %}"
               }
             },
             "Get default output uri prefix": {
@@ -154,7 +154,7 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "outputUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "outputUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
@@ -167,7 +167,7 @@
               "Choices": [
                 {
                   "Next": "Use provided logs uri",
-                  "Condition": "{% $draftEngineParameters.logsUri ? true : false %}",
+                  "Condition": "{% $engineParameters.logsUri ? true : false %}",
                   "Comment": "Logs URI Provided"
                 }
               ],
@@ -177,7 +177,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "logsUri": "{% $draftEngineParameters.logsUri %}"
+                "logsUri": "{% $engineParameters.logsUri %}"
               }
             },
             "Get default logs uri prefix": {
@@ -188,7 +188,7 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "logsUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "logsUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
@@ -201,7 +201,7 @@
               "Choices": [
                 {
                   "Next": "Use provided cache uri",
-                  "Condition": "{% $draftEngineParameters.cacheUri ? true : false %}",
+                  "Condition": "{% $engineParameters.cacheUri ? true : false %}",
                   "Comment": "Cache URI Provided"
                 }
               ],
@@ -211,7 +211,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "cacheUri": "{% $draftEngineParameters.cacheUri %}"
+                "cacheUri": "{% $engineParameters.cacheUri %}"
               }
             },
             "Get default cache uri prefix": {
@@ -222,14 +222,14 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "cacheUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "cacheUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
         }
       ],
       "Assign": {
-        "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $draftEngineParameters, $merge($states.result) ] ~> $merge  %}"
+        "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $engineParameters, $merge($states.result) ] ~> $merge  %}"
       }
     },
     "Get fastq inputs": {
@@ -248,7 +248,7 @@
               "Arguments": {
                 "FunctionName": "${__get_fastq_ids_in_instrument_run_id_lambda_function_arn__}",
                 "Payload": {
-                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}"
+                  "instrumentRunId": "{% $inputs.instrumentRunId ? $inputs.instrumentRunId : $tags.instrumentRunId %}"
                 }
               },
               "Retry": [
@@ -362,8 +362,8 @@
               "Arguments": {
                 "FunctionName": "${__get_bssh_fastq_outputs_lambda_function_arn__}",
                 "Payload": {
-                  "instrumentRunId": "{% $draftInputs.instrumentRunId ? $draftInputs.instrumentRunId : $draftTags.instrumentRunId %}",
-                  "libraryIdList": "{% [ $draftLibrariesList.(libraryId) ] %}"
+                  "instrumentRunId": "{% $inputs.instrumentRunId ? $inputs.instrumentRunId : $tags.instrumentRunId %}",
+                  "libraryIdList": "{% [ $librariesList.(libraryId) ] %}"
                 }
               },
               "Retry": [
@@ -401,7 +401,7 @@
         }
       ],
       "Assign": {
-        "inputs": "{% [\n  /* Force the instrument run id value from the tags */\n  {\n    \"instrumentRunId\": $draftTags.instrumentRunId\n  },\n  /* Then add in the draft inputs */\n  $draftInputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
+        "inputs": "{% [\n  /* Force the instrument run id value from the tags */\n  {\n    \"instrumentRunId\": $tags.instrumentRunId\n  },\n  /* Then add in the draft inputs */\n  $inputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
       }
     },
     "Generate BCLConvert InterOp QC Draft Data Event": {
@@ -410,9 +410,9 @@
       "Arguments": {
         "FunctionName": "${__generate_bclconvert_interopqc_draft_data_event_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "portalRunId": "{% $detail.portalRunId %}",
           "inputs": "{% $inputs %}",
-          "tags": "{% $draftTags %}",
+          "tags": "{% $tags %}",
           "engineParameters": "{% $engineParameters %}"
         }
       },
