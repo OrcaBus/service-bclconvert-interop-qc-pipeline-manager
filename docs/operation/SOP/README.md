@@ -11,6 +11,7 @@ for a given instrument run id.
 These tasks range from:
 * Kicking off a reanalysis of a interop-qc pipeline manually.
 
+<a name="PM.BIQ.1"></a>
 ## Manually running an analysis
 
 * [PM.BIQ.1 - Kicking off a reanalysis of a set of samples manually](PM.BIQ.1/PM.BIQ.1-ManualPipelineExecution.md)
