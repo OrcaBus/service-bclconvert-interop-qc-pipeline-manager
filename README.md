@@ -29,7 +29,7 @@
 
 ## Description
 
-This is the BCLConvert InterOp QC Manager service, resposible for
+This is the BCLConvert InterOp QC Manager service, responsible for
 managing and orchestrating the BCLConvert InterOp QC workflow on ICA.
 
 The BCLConvert InterOp QC Manager performs the following tasks:
