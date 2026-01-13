@@ -150,7 +150,7 @@ get_workflow(){
             "name": $workflowName,
             "version": $workflowVersion,
 			"executionEngine": $executionEngine,
-            "codeVersion": $codeVersion,
+            "codeVersion": $codeVersion
          } |
          to_entries |
          map(
@@ -165,8 +165,25 @@ get_workflow(){
     '
 }
 
+get_workflow_run(){
+  local portal_run_id="$1"
 
-# Get args
+  curl --silent --fail --show-error --location \
+    --request GET \
+    --get \
+    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun?portalRunId=${portal_run_id}" | \
+  jq --compact-output --raw-output \
+    '
+      if (.results | length) > 0 then
+		.results[0]
+	  else
+		empty
+	  end
+    '
+}
+
+
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -219,7 +236,7 @@ lambda_payload="$( \
     --argjson workflow "${workflow}" \
     --arg payloadVersion "${PAYLOAD_VERSION}" \
     --arg portalRunId "${portal_run_id}" \
-    --argjson libraries "$(get_linked_libraries)" \
+    --argjson libraries "$(get_libraries "${INSTRUMENT_RUN_ID}")" \
     '
 	  {
 		"status": "DRAFT",
@@ -227,7 +244,7 @@ lambda_payload="$( \
 		"workflow": $workflow,
 		"workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
 		"portalRunId": $portalRunId,
-		"libraries": $libraries,
+		"libraries": $libraries
 	  }
     ' \
 )"

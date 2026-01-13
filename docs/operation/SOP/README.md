@@ -13,4 +13,4 @@ These tasks range from:
 
 ## Manually running an analysis
 
-* [PM.DWD.1 - Kicking off a reanalysis of a set of samples manually](PM.DWD.1/PM.DWD.1-ManualPipelineExecution.md)
+* [PM.BIQ.1 - Kicking off a reanalysis of a set of samples manually](PM.BIQ.1/PM.BIQ.1-ManualPipelineExecution.md)
