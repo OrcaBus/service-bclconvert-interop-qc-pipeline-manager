@@ -38,7 +38,7 @@ generate-WRU-draft.sh (instrument_run_id)
                       [-p | --project-id <project_id>]
 
 Description:
-Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
+Run this script to generate a draft WorkflowRunUpdate event for the specified instrument run id.
 
 Positional arguments:
   instrument_run_id:  The instrument run id to run bclconvert-interop-qc against.
