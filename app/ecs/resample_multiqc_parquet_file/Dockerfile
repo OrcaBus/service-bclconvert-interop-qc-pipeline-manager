@@ -1,8 +1,8 @@
-FROM ubuntu:noble
+FROM public.ecr.aws/ubuntu/ubuntu:noble
 
 ARG TARGETPLATFORM
 
-ARG WRAPICA_VERSION="2.40.0.dev20251005111713"
+ARG WRAPICA_VERSION="2.40.1.post20260211135303"
 ARG PYARROW_VERSION="21.0.0"
 ARG PANDAS_VERSION="2.3.3"
 ARG PYTHON_VERSION="3.12"
@@ -41,10 +41,9 @@ RUN \
     pyarrow=="${PYARROW_VERSION}" \
     pandas=="${PANDAS_VERSION}" \
     boto3=="${BOTO3_VERSION}" && \
+  # Use --index "https://test.pypi.org/simple" --index-strategy unsafe-best-match for dev versions \
   uv pip install \
     --default-index "https://pypi.org/simple" \
-    --index "https://test.pypi.org/simple" \
-    --index-strategy unsafe-best-match \
     wrapica=="${WRAPICA_VERSION}" && \
   # Install the aws cli \
   ( \

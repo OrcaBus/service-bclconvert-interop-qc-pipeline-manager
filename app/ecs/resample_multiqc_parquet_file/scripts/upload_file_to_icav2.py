@@ -9,12 +9,14 @@ from pathlib import Path
 from subprocess import run
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
+from time import sleep
 from urllib.parse import urlparse, urlunparse
 
 # Wrapica imports
 from wrapica.project_data import (
     convert_uri_to_project_data_obj,
-    create_file_with_upload_url
+    create_file_with_upload_url,
+    delete_project_data
 )
 
 # Globals
@@ -145,11 +147,28 @@ def main():
         create_data_if_not_found=True
     )
 
+    # Try get the file object
+    try:
+        destination_file_object = convert_uri_to_project_data_obj(
+            data_uri=destination_folder_uri + MULTIQC_PARQUET_NAME,
+            create_data_if_not_found=False
+        )
+    except Exception:
+        pass
+    else:
+        print(f"Deleting {destination_folder_uri}/multiqc.parquet")
+        # Delete the file first before regenerating the upload url
+        delete_project_data(
+            project_id=str(destination_file_object.project_id),
+            data_id=str(destination_file_object.data.id),
+        )
+        sleep(5)
+
     # Create the upload url
     # Create the file object
     destination_file_upload_url = create_file_with_upload_url(
-        project_id=destination_folder_object.project_id,
-        folder_id=destination_folder_object.data.id,
+        project_id=str(destination_folder_object.project_id),
+        folder_id=str(destination_folder_object.data.id),
         file_name=MULTIQC_PARQUET_NAME
     )
 
