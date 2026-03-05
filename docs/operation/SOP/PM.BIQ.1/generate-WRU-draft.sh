@@ -3,13 +3,13 @@
 # Set to fail
 set -euo pipefail
 
-set -o xtrace
-
 # Globals
 LAMBDA_FUNCTION_NAME="WruDraftValidator"
+HOSTNAME=""
 
 # CLI Defaults
 FORCE=false  # Use --force to set to true
+COMMENT=""   # Use -c or --comment to set
 
 # Workflow settings
 WORKFLOW_NAME="bclconvert-interop-qc"
@@ -18,7 +18,12 @@ EXECUTION_ENGINE="ICA"
 CODE_VERSION="ea35fcd"
 PAYLOAD_VERSION="2025.05.29"
 
+GITHUB_REPO="OrcaBus/service-bclconvert-interop-qc-pipeline-manager"
+THIS_SCRIPT_PATH="docs/operation/SOP/PM.BIQ.1/generate-WRU-draft.sh"
+THIS_SCRIPT_VERSION="2026.03.05"
+
 SRM_DOMAIN="sequence"
+SOP_ID="PM.BIQ.1"
 
 # Glocals
 INSTRUMENT_RUN_ID=""
@@ -28,14 +33,40 @@ echo_stderr(){
   echo "$(date -Iseconds)" "$@" >&2
 }
 
+compare_script_version_to_repo(){
+  : '
+  Compare the version of this script to the version in the repo, and print a warning if they are different
+  '
+  repo_script_version="$( \
+	curl --silent --fail --location --show-error \
+	  --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" | \
+	(
+		grep -m1 "THIS_SCRIPT_VERSION" | \
+		cut -d'"' -f2
+	) || echo "unknown"
+  )"
+
+  if [[ "${THIS_SCRIPT_VERSION}" != "${repo_script_version}" ]]; then
+	echo_stderr "Warning: This script version (${THIS_SCRIPT_VERSION}) is different from the version in the repo (${repo_script_version})."
+	echo_stderr "Warning: Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
+  fi
+}
+
 print_usage(){
+  : '
+  Print usage
+  '
+  local hostname
+  hostname="$(get_hostname_from_ssm)"
+  if [[ -z "${hostname}" ]]; then
+	hostname="<aws_account_prefix>.umccr.org"
+  fi
+
   echo "
 generate-WRU-draft.sh [-h | --help]
 generate-WRU-draft.sh (instrument_run_id)
+                      (-c | --comment <comment>)
                       [-f | --force]
-                      [-o | --output-uri-prefix <s3_uri>]
-                      [-l | --logs-uri-prefix <s3_uri>]
-                      [-p | --project-id <project_id>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified instrument run id.
@@ -45,18 +76,51 @@ Positional arguments:
 
 Keyword arguments:
   -h | --help:               Print this help message and exit.
+  -c | --comment:            (Required) A brief indication on why you are running this workflow.
   -f | --force:              Don't confirm before pushing the event to EventBridge.
 
 Environment:
+  PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
   AWS_REGION:   (Optional) The AWS region to use for AWS CLI commands.
+
+Binaries:
+  - aws CLI should be installed and configured with appropriate credentials and region.
+  - jq should be installed for JSON parsing.
+  - curl should be installed for making API requests.
+  - base64 should be available for decoding the portal token.
+  - openssl should be available for generating random portal run ids.
 
 Example usage:
 bash generate-WRU-draft.sh <instrument_run_id>
 "
 }
 
+get_email_from_portal_token(){
+  : '
+  Get the email to use from the portal JWT
+  We use this to make a comment on the workflow run in the OrcaUI
+  once the event is pushed to EventBridge and the workflow run is created,
+  to indicate who created the workflow run
+  '
+  cut -d'.' -f2 <<< "${PORTAL_TOKEN}" | \
+  (base64 --decode 2>/dev/null || true) | \
+  jq --raw-output '.email'
+}
+
 get_hostname_from_ssm(){
+  : '
+  Get the hostname from SSM Parameter Store
+  '
+  # Cache the hostname in a global variable to
+  # avoid multiple calls to SSM Parameter Store
+  if [[ -n "${HOSTNAME}" ]]; then
+	echo "${HOSTNAME}"
+	return
+  fi
+
+  # Get the hostname from SSM Parameter Store and
+  # cache it in the HOSTNAME global variable
   aws ssm get-parameter \
     --name "/hosted_zone/umccr/name" \
     --output json | \
@@ -64,19 +128,13 @@ get_hostname_from_ssm(){
     '.Parameter.Value'
 }
 
-get_orcabus_token(){
-  aws secretsmanager get-secret-value \
-    --secret-id orcabus/token-service-jwt \
-    --output json \
-    --query SecretString | \
-  jq --raw-output \
-    'fromjson | .id_token'
-}
-
 get_library_obj_from_library_id(){
+  : '
+  Get the library object (libraryId and orcabusId) from the library id
+  '
   local library_id="$1"
   curl --silent --fail --show-error --location \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://metadata.$(get_hostname_from_ssm)/api/v1/library?libraryId=${library_id}" | \
   jq --raw-output \
     '
@@ -113,7 +171,7 @@ get_libraries(){
 	  --fail --silent --location --show-error \
 	  --request "GET" \
 	  --header "Accept: application/json" \
-	  --header "Authorization: Bearer $(get_orcabus_token)" \
+	  --header "Authorization: Bearer ${PORTAL_TOKEN}" \
 	  --url "https://${SRM_DOMAIN}.$(get_hostname_from_ssm)/api/v1/sequence/${instrument_run_id}/sequence_run/" | \
 	jq --raw-output \
 	  '
@@ -136,7 +194,7 @@ get_workflow(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow" \
     --data "$( \
       jq \
@@ -171,7 +229,7 @@ get_workflow_run(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun?portalRunId=${portal_run_id}" | \
   jq --compact-output --raw-output \
     '
@@ -183,7 +241,6 @@ get_workflow_run(){
     '
 }
 
-
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -192,10 +249,17 @@ while [[ $# -gt 0 ]]; do
       print_usage
       exit 0
       ;;
+    # Comment
+    -c|--comment)
+      COMMENT="$2"
+      shift
+      ;;
+    -c=*|--comment=*)
+	  COMMENT="${1#*=}"
+	  ;;
   	# Force boolean
     -f|--force)
       FORCE=true
-      shift
       ;;
   	# Unexpected keyword argument
 	-*)
@@ -212,10 +276,43 @@ while [[ $# -gt 0 ]]; do
         exit 1
 	  fi
       INSTRUMENT_RUN_ID="$1"
-      shift
       ;;
   esac
+  shift
 done
+
+# Check required environment variables
+if [[ -z "${PORTAL_TOKEN:-}" ]]; then
+  echo_stderr "Error: PORTAL_TOKEN environment variable is not set. Exiting."
+  print_usage
+  exit 1
+fi
+
+# Check instrument run id is provided
+if [[ -z "${INSTRUMENT_RUN_ID}" ]]; then
+  echo_stderr "Error: instrument_run_id positional argument is required. Exiting."
+  print_usage
+  exit 1
+fi
+
+# Check comment is provided
+if [[ -z "${COMMENT}" ]]; then
+  echo_stderr "Error: Comment is required. Please provide a comment using the -c or --comment flag. Exiting."
+  print_usage
+  exit 1
+fi
+
+# Check AWS CLI configuration
+if ! aws sts get-caller-identity --output json > /dev/null 2>&1; then
+  echo_stderr "Error: AWS CLI is not configured properly. Please configure your AWS CLI with appropriate credentials and region. Exiting."
+  exit 1
+fi
+
+# Set hostname
+HOSTNAME="$(get_hostname_from_ssm)"
+
+# Check script version
+compare_script_version_to_repo
 
 # Generate the portal run id
 portal_run_id="$(generate_portal_run_id)"
@@ -229,6 +326,15 @@ workflow="$( \
 )"
 echo_stderr "Using workflow: $(jq --raw-output '.orcabusId' <<< "${workflow}")"
 
+# Collecting relevant libraries
+echo_stderr "Collecting libraries linked to instrument run id '${INSTRUMENT_RUN_ID}'"
+libraries="$(get_libraries "${INSTRUMENT_RUN_ID}")"
+if [[ "$(jq length <<< "${libraries}")" -eq 0 ]]; then
+  echo_stderr "Error: No libraries found linked to instrument run id '${INSTRUMENT_RUN_ID}'. Exiting."
+  exit 1
+else
+  echo_stderr "Found $(jq length <<< "${libraries}") libraries linked to instrument run id '${INSTRUMENT_RUN_ID}'."
+fi
 
 # Generate the event
 lambda_payload="$( \
@@ -236,15 +342,28 @@ lambda_payload="$( \
     --argjson workflow "${workflow}" \
     --arg payloadVersion "${PAYLOAD_VERSION}" \
     --arg portalRunId "${portal_run_id}" \
-    --argjson libraries "$(get_libraries "${INSTRUMENT_RUN_ID}")" \
+    --arg instrumentRunId "${INSTRUMENT_RUN_ID}" \
+    --argjson libraries "${libraries}" \
     '
 	  {
 		"status": "DRAFT",
 		"timestamp": (now | todateiso8601),
 		"workflow": $workflow,
-		"workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
+		"workflowRunName": (
+		  "umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] |
+		  gsub("\\."; "-")) + "--" + $portalRunId
+		),
 		"portalRunId": $portalRunId,
-		"libraries": $libraries
+		"libraries": $libraries,
+		"payload": {
+		  "version": $payloadVersion,
+		  "data": {
+		    "tags": {
+		      "instrumentRunId": $instrumentRunId,
+		      "libraryIdList": ($libraries | map(.libraryId)),
+		    }
+		  }
+		}
 	  }
     ' \
 )"
@@ -253,7 +372,6 @@ lambda_payload="$( \
 if [[ "${FORCE}" == "false" ]]; then
     echo_stderr "Send the following payload to the lambda object:"
     jq --raw-output <<< "${lambda_payload}" 1>&2
-
     read -r -p 'Confirm to push this event to EventBridge? (y/n): ' confirm_push
     if [[ ! "${confirm_push}" =~ ^[Yy]$ ]]; then
       echo_stderr "Aborting event push."
@@ -285,6 +403,7 @@ jq --raw-output \
 wait
 rm lambda_data_pipe
 
+# Check if there were any errors returned from the Lambda invocation
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
   jq --raw-output '.' < "${errors_json}" 1>&2
@@ -294,8 +413,11 @@ else
   rm "${errors_json}"
 fi
 
+# Now wait for the workflow run to be registered by the workflow manager,
+# which should be done within a minute or two after pushing the event to EventBridge,
+# and get the workflow run object, which contains the Orcabus ID that we will use to link the
+# workflow run to the comment we will create in the next step
 echo_stderr "Waiting for the workflow run to be registered by the workflow manager"
-
 while :; do
   workflow_run_object="$( \
   	get_workflow_run "${portal_run_id}"
@@ -311,6 +433,26 @@ while :; do
 	sleep 10
   fi
 done
+
+echo_stderr "Generating workflow comment"
+curl --fail-with-body --silent --location \
+  --request "POST" \
+  --header "Accept: application/json" \
+  --header "Authorization: Bearer ${PORTAL_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data "$(
+  	jq --null-input --raw-output \
+  	  --arg emailAddress "$(get_email_from_portal_token)" \
+  	  --arg sopId "${SOP_ID}" \
+  	  --arg comment "${COMMENT}" \
+  	  '
+  	    {
+  	      "text": "Pipeline executed manually via SOP \($sopId) -- \($comment)",
+  	      "created_by": $emailAddress
+  	    }
+  	  '
+  )" \
+  --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun/${workflow_run_orcabus_id}/comment/"
 
 echo_stderr "Workflow Run Creation Event complete!"
 echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/runs/workflow/${workflow_run_orcabus_id}' to track the status of the workflow run"
