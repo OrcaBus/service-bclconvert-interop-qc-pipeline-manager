@@ -28,6 +28,18 @@ SOP_ID="PM.BIQ.1"
 # Glocals
 INSTRUMENT_RUN_ID=""
 
+# AWS Account ID by prefix
+declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
+  ["843407916570"]="dev"
+  ["455634345446"]="stg"
+  ["472057503814"]="prod"
+)
+declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
+  ["ap-southeast-2_iWOHnsurL"]="dev"
+  ["ap-southeast-2_wWDrdTyzP"]="stg"
+  ["ap-southeast-2_HFrQ3aWm8"]="prod"
+)
+
 # Functions
 echo_stderr(){
   echo "$(date -Iseconds)" "$@" >&2
@@ -92,7 +104,7 @@ Binaries:
   - openssl should be available for generating random portal run ids.
 
 Example usage:
-bash generate-WRU-draft.sh <instrument_run_id>
+bash generate-WRU-draft.sh <instrument_run_id> --comment 'Running bclconvert-interop-qc for testing purposes'
 "
 }
 
@@ -241,6 +253,22 @@ get_workflow_run(){
     '
 }
 
+list_all_workflow_versions(){
+  : '
+  This is a simple function to ensure that we can list all workflows and as such
+  the users portal token is from the same environmnet as our AWS profile
+
+  Given in order to list all workflows, we need to get the hostname from the aws ssm parameters
+  AND we need the portal token for the organisation, a failure here means that the two are mismatched
+  '
+  curl --silent --fail --location \
+	--request GET \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${PORTAL_TOKEN}" \
+	--url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow?name=${WORKFLOW_NAME}" > /dev/null
+}
+
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -313,6 +341,14 @@ HOSTNAME="$(get_hostname_from_ssm)"
 
 # Check script version
 compare_script_version_to_repo
+
+# Check AWS CLI Configuration matches portal token configuration
+if ! list_all_workflows; then
+  echo_stderr "Error: Unable to list workflows. "
+  echo_stderr "This may indicate a mismatch between your AWS CLI configuration and your portal token."
+  echo_stderr "Please ensure that your AWS CLI is configured to access the same environment as your portal token. Exiting."
+  exit 1
+fi
 
 # Generate the portal run id
 portal_run_id="$(generate_portal_run_id)"
@@ -448,7 +484,7 @@ curl --fail-with-body --silent --location \
   	  '
   	    {
   	      "text": "Pipeline executed manually via SOP \($sopId) -- \($comment)",
-  	      "created_by": $emailAddress
+  	      "createdBy": $emailAddress
   	    }
   	  '
   )" \
