@@ -1,7 +1,7 @@
 export interface SsmParameterValues {
   // Payload defaults
   workflowName: string;
-  payloadVersion: string;
+  defaultPayloadVersion: string;
   workflowVersion: string;
 
   // Engine Parameter defaults
@@ -19,7 +19,7 @@ export interface SsmParameterPaths {
   // Payload parameters
   workflowName: string;
   workflowVersion: string;
-  payloadVersion: string;
+  defaultPayloadVersion: string;
 
   // Engine parameters
   prefixPipelineIdsByWorkflowVersion: string;

@@ -23,7 +23,7 @@ function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
     timeout: Duration.seconds(60),
-    memorySize: lambdaRequirements.needsIcav2Tools ? 1024 : undefined,
+    memorySize: lambdaRequirements.needsHigherMemory ? 1024 : undefined,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
     includeIcav2Layer: lambdaRequirements.needsIcav2Tools,
   });
@@ -103,8 +103,8 @@ function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
     const draftSchemaName: SchemaNames = 'completeDataDraft';
     lambdaFunction.addEnvironment('SSM_REGISTRY_NAME', path.join(SSM_SCHEMA_ROOT, 'registry'));
     lambdaFunction.addEnvironment(
-      'SSM_SCHEMA_NAME',
-      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName), 'latest')
+      'SSM_SCHEMA_PATH',
+      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName))
     );
   }
 

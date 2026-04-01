@@ -4,8 +4,9 @@
 Download the draft schema, validate it against the current schema, and print the results.
 """
 
-# Imports
+# Standard imports
 import json
+from pathlib import Path
 import boto3
 import typing
 import jsonschema
@@ -21,7 +22,7 @@ if typing.TYPE_CHECKING:
 
 # Globals
 SSM_REGISTRY_NAME_ENV_VAR = "SSM_REGISTRY_NAME"
-SSM_SCHEMA_NAME_ENV_VAR = "SSM_SCHEMA_NAME"
+SSM_SCHEMA_PATH_ENV_VAR = "SSM_SCHEMA_PATH"
 
 # Set up logging
 logger = logging.getLogger()
@@ -92,12 +93,22 @@ def handler(event, context) -> Dict[str, bool]:
     Given a draft schema, validate it against the current schema and print the results.
     :return:
     """
+    # Get data and version
+    payload_version = event.get("payloadVersion")
+    data = event.get("data")
+
+    # Use 'default' if payload version is none
+    if payload_version is None:
+        payload_version = 'default'
+
     # Get the SSM parameters
     schema_registry = get_ssm_parameter_value(environ[SSM_REGISTRY_NAME_ENV_VAR])
-    schema_name = json.loads(get_ssm_parameter_value(environ[SSM_SCHEMA_NAME_ENV_VAR]))['schemaName']
+    schema_name = json.loads(get_ssm_parameter_value(
+        str(Path(environ[SSM_SCHEMA_PATH_ENV_VAR]) / payload_version)
+    ))['schemaName']
 
     # Get the current schema from the schema registry
-    current_schema = get_schema_from_registry(
+    payload_schema = get_schema_from_registry(
         registry_name=schema_registry,
         schema_name=schema_name
     )
@@ -105,20 +116,8 @@ def handler(event, context) -> Dict[str, bool]:
     # Get the draft schema from the schema registry
     return {
         "isValid": validate_draft_schema(
-            current_schema,
+            payload_schema,
             # Assuming the event contains the draft schema as a JSON string
-            json.dumps(event)
+            json.dumps(data)
         )
     }
-
-
-# if __name__ == "__main__":
-#     from os import environ
-#     import json
-#     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ["SSM_REGISTRY_NAME"] = '/orcabus/workflows/dragen-wgts-dna/schemas/registry'
-#     environ["SSM_SCHEMA_NAME"] = '/orcabus/workflows/dragen-wgts-dna/schemas/dragen-wgts-dna-complete-data-draft/latest'
-#     print(json.dumps(
-#         handler({}, None),
-#         indent=4
-#     ))

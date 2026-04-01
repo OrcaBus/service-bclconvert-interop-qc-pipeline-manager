@@ -21,7 +21,10 @@
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $data %}"
+        "Payload": {
+          "payloadVersion": "{% $payload.version ? $payload.version : null %}",
+          "data": "{% $data %}"
+        }
       },
       "Retry": [
         {
@@ -234,7 +237,7 @@
     },
     "Get fastq inputs": {
       "Type": "Parallel",
-      "Next": "Generate BCLConvert InterOp QC Draft Data Event",
+      "Next": "Add sample filters csv",
       "Branches": [
         {
           "StartAt": "Get Fastq IDs in Instrument Run ID",
@@ -402,6 +405,73 @@
       ],
       "Assign": {
         "inputs": "{% [\n  /* Force the instrument run id value from the tags */\n  {\n    \"instrumentRunId\": $tags.instrumentRunId\n  },\n  /* Then add in the draft inputs */\n  $inputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
+      }
+    },
+    "Add sample filters csv": {
+      "Type": "Parallel",
+      "Next": "Generate BCLConvert InterOp QC Draft Data Event",
+      "Branches": [
+        {
+          "StartAt": "If workflow version higher than 2026",
+          "States": {
+            "If workflow version higher than 2026": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Add sample filters",
+                  "Condition": "{% $payload.version >= \"${__sample_filters_payload_version_threshold__}\" %}"
+                }
+              ],
+              "Default": "No sample filters to add (Pass)"
+            },
+            "Add sample filters": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__add_sample_filters_lambda_function_arn__}",
+                "Payload": {
+                  "instrumentRunId": "{% $inputs.instrumentRunId ? $inputs.instrumentRunId : $tags.instrumentRunId %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true,
+              "Output": {
+                "sampleFiltersJson": "{% $states.result.Payload.sampleFiltersJson %}"
+              }
+            },
+            "No sample filters to add (Pass)": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            }
+          }
+        },
+        {
+          "StartAt": "Add sample filters csv placeholder",
+          "States": {
+            "Add sample filters csv placeholder": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            }
+          }
+        }
+      ],
+      "Arguments": {
+        "inputs": "{% [\n  $inputs,\n  ($states.result ~> $merge)\n] ~> $merge %}"
       }
     },
     "Generate BCLConvert InterOp QC Draft Data Event": {

@@ -1,7 +1,7 @@
 /* Directory constants */
 import path from 'path';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
-import { WorkflowVersionType } from './interfaces';
+import { PayloadVersionType, WorkflowVersionType } from './interfaces';
 export const APP_ROOT = path.join(__dirname, '../../app');
 export const LAMBDA_DIR = path.join(APP_ROOT, 'lambdas');
 export const STEP_FUNCTIONS_DIR = path.join(APP_ROOT, 'step-functions-templates');
@@ -10,8 +10,8 @@ export const EVENT_SCHEMAS_DIR = path.join(APP_ROOT, 'event-schemas');
 
 /* Workflow constants */
 export const WORKFLOW_NAME = 'bclconvert-interop-qc';
-export const WORKFLOW_VERSION: WorkflowVersionType = '1.5.0--1.31';
-export const PAYLOAD_VERSION = '2025.05.29';
+export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '1.9.0--1.33';
+export const DEFAULT_PAYLOAD_VERSION: PayloadVersionType = '2026.04.01';
 export const STACK_PREFIX = 'orca-bclconvert-interop-qc';
 
 export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}analysis/${WORKFLOW_NAME}/`;
@@ -28,6 +28,8 @@ export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<
   '1.3.1--1.25.2': '9a67bc07-b668-4aff-9ae8-fb4b52a19f4b',
   // https://github.com/umccr/cwl-ica/releases/tag/bclconvert-interop-qc%2F1.5.0--1.31__20251015013928
   '1.5.0--1.31': 'ebbcd07d-a030-4841-b2ad-ac985c776f36',
+  // https://github.com/umccr/cwl-ica/releases/tag/bclconvert-interop-qc%2F1.9.0--1.33__20260401225123
+  '1.9.0--1.33': '9bbd1a1d-1f7f-42dd-84c0-936ae17688b7',
 };
 
 /* SSM Parameter Paths */
@@ -35,7 +37,7 @@ export const SSM_PARAMETER_PATH_PREFIX = path.join('/orcabus/workflows/bclconver
 export const SSM_PARAMETER_PATH_WORKFLOW_NAME = path.join(SSM_PARAMETER_PATH_PREFIX, WORKFLOW_NAME);
 export const SSM_PARAMETER_PATH_WORKFLOW_VERSION = path.join(
   SSM_PARAMETER_PATH_PREFIX,
-  WORKFLOW_VERSION
+  DEFAULT_WORKFLOW_VERSION
 );
 export const SSM_PARAMETER_PATH_PREFIX_PIPELINE_IDS_BY_WORKFLOW_VERSION = path.join(
   SSM_PARAMETER_PATH_PREFIX,
@@ -45,9 +47,9 @@ export const SSM_PARAMETER_PATH_ICAV2_PROJECT_ID = path.join(
   SSM_PARAMETER_PATH_PREFIX,
   'icav2-project-id'
 );
-export const SSM_PARAMETER_PATH_PAYLOAD_VERSION = path.join(
+export const SSM_PARAMETER_PATH_DEFAULT_PAYLOAD_VERSION = path.join(
   SSM_PARAMETER_PATH_PREFIX,
-  'payload-version'
+  'default-payload-version'
 );
 export const SSM_PARAMETER_PATH_LOGS_PREFIX = path.join(SSM_PARAMETER_PATH_PREFIX, 'logs-prefix');
 export const SSM_PARAMETER_PATH_OUTPUT_PREFIX = path.join(

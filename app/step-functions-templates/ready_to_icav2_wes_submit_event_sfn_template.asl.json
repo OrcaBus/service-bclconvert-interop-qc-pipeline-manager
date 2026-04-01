@@ -11,7 +11,7 @@
     },
     "Create named multiqc parquet files": {
       "Type": "Parallel",
-      "Next": "Convert BCLConvert Ready Event to ICAv2 WES Event",
+      "Next": "Add sample filters",
       "Branches": [
         {
           "StartAt": "For each multiqc parquet file (batched)",
@@ -169,6 +169,67 @@
         "parquetFileUriList": "{% ([ $states.result ~> $merge ]) ~> $lookup('outputUriList') %}"
       }
     },
+    "Add sample filters": {
+      "Type": "Parallel",
+      "Next": "Convert BCLConvert Ready Event to ICAv2 WES Event",
+      "Branches": [
+        {
+          "StartAt": "Has sample filters",
+          "States": {
+            "Has sample filters": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Write sample filters file to cache dir",
+                  "Condition": "{% $readyEventDetail.payload.data.inputs.sampleFiltersJson %}"
+                }
+              ],
+              "Default": "No sample filters to write"
+            },
+            "Write sample filters file to cache dir": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "${__write_sample_filters_file_lambda_function_arn__}",
+                "Payload": {
+                  "sampleFiltersFileUri": "{% $readyEventDetail.payload.data.engineParameters.cacheUri & 'sample_filters.tsv' %}",
+                  "sampleFiltersJson": "{% $readyEventDetail.payload.data.inputs.sampleFiltersJson %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true
+            },
+            "No sample filters to write": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Placeholder (sample filters)",
+          "States": {
+            "Placeholder (sample filters)": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
     "Convert BCLConvert Ready Event to ICAv2 WES Event": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
@@ -176,7 +237,8 @@
         "FunctionName": "${__bclconvert_interopqc_ready_to_icav2_wes_request_lambda_function_arn__}",
         "Payload": {
           "readyEventDetail": "{% $readyEventDetail %}",
-          "parquetFileUriList": "{% $parquetFileUriList %}"
+          "parquetFileUriList": "{% $parquetFileUriList %}",
+          "sampleFiltersFileUri": "{% $readyEventDetail.payload.data.inputs.sampleFiltersJson ? $readyEventDetail.payload.data.engineParameters.cacheUri & 'sample_filters.tsv' : null %}"
         }
       },
       "Retry": [
