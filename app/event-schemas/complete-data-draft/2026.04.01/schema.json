@@ -89,7 +89,7 @@
           }
         },
         "sampleFiltersJson": {
-          "type": "object",
+          "type": "array",
           "items": {
             "$ref": "#/$defs/sampleFiltersObject"
           }

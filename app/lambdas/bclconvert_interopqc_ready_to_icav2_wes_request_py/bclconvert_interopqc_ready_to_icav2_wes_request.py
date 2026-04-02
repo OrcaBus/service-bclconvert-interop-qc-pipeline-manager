@@ -148,7 +148,7 @@ def handler(event, context) -> Dict[str, Any]:
                         if sample_filters_uri is not None
                         else None
                     )
-                }
+                }.items()
             )),
             "engineParameters": event_detail_body['payload']['data']['engineParameters'],
             "tags": {

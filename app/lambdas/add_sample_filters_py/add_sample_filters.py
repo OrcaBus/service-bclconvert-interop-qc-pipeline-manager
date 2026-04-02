@@ -43,7 +43,7 @@ def handler(event, context):
     library_id_list = get_libraries_from_instrument_run_id(instrument_run_id)
 
     # Get the lane ids
-    lane_list: List[int] = list(set(
+    lane_list: List[int] = sorted(list(set(
         list(map(
             lambda fastq_iter_: fastq_iter_['lane'],
             get_fastqs_in_libraries_and_instrument_run_id(
@@ -51,7 +51,7 @@ def handler(event, context):
                 library_id_list=library_id_list
             )
         ))
-    ))
+    )))
 
     # Create lanes buttons
     for lane_iter_ in lane_list:

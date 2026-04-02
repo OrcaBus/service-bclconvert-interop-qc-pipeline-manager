@@ -23,7 +23,6 @@ WGS<tab>...
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from urllib.parse import urlparse, urlunparse
-import json
 
 # Wrapica imports
 from wrapica.project_data import (
@@ -73,7 +72,7 @@ def handler(event, context):
     )
 
     # Write out then read in
-    with NamedTemporaryFile(suffix=".yaml") as file_h:
+    with NamedTemporaryFile(suffix=".tsv", mode='w', encoding='utf-8') as file_h:
         # Write file contents
         file_h.write(
             '\n'.join(sample_filters_tsv_lines) + '\n'
