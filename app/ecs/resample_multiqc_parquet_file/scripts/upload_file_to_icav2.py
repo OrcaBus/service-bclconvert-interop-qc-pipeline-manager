@@ -12,11 +12,14 @@ from textwrap import dedent
 from time import sleep
 from urllib.parse import urlparse, urlunparse
 
+# Libica imports
+from libica.openapi.v3 import ApiException
+
 # Wrapica imports
 from wrapica.project_data import (
     convert_uri_to_project_data_obj,
     create_file_with_upload_url,
-    delete_project_data
+    delete_project_data, get_project_data_obj_from_project_id_and_path
 )
 
 # Globals
@@ -153,16 +156,27 @@ def main():
             data_uri=destination_folder_uri + MULTIQC_PARQUET_NAME,
             create_data_if_not_found=False
         )
-    except Exception:
+    except ApiException:
+        # We expect this
         pass
     else:
-        print(f"Deleting {destination_folder_uri}/multiqc.parquet")
+        print(f"Deleting {destination_folder_uri}{MULTIQC_PARQUET_NAME} before regenerating the upload url")
         # Delete the file first before regenerating the upload url
         delete_project_data(
             project_id=str(destination_file_object.project_id),
             data_id=str(destination_file_object.data.id),
         )
-        sleep(5)
+        # Don't move on until file is deleted from database
+        while True:
+            sleep(1)
+            try:
+                get_project_data_obj_from_project_id_and_path(
+                    project_id=str(destination_file_object.project_id),
+                    data_path=Path(str(destination_file_object.data.details.path)),
+                    data_type='FILE'
+                )
+            except (ApiException, FileNotFoundError):
+                break
 
     # Create the upload url
     # Create the file object
