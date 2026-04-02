@@ -60,7 +60,7 @@ def handler(event, context):
         (
             sample_filters_file_uri_obj.scheme,
             sample_filters_file_uri_obj.netloc,
-            str(Path(sample_filters_file_uri_obj.path).parent),
+            str(Path(sample_filters_file_uri_obj.path).parent) + "/",
             None, None, None
         )
     ))
