@@ -16,11 +16,11 @@ WORKFLOW_NAME="bclconvert-interop-qc"
 WORKFLOW_VERSION="1.5.0--1.31"
 EXECUTION_ENGINE="ICA"
 CODE_VERSION="ea35fcd"
-PAYLOAD_VERSION="2025.05.29"
+PAYLOAD_VERSION="2026.04.01"
 
 GITHUB_REPO="OrcaBus/service-bclconvert-interop-qc-pipeline-manager"
 THIS_SCRIPT_PATH="docs/operation/SOP/PM.BIQ.1/generate-WRU-draft.sh"
-THIS_SCRIPT_VERSION="2026.03.05"
+SOP_VERSION="2026.04.01"
 
 SRM_DOMAIN="sequence"
 SOP_ID="PM.BIQ.1"
@@ -28,40 +28,9 @@ SOP_ID="PM.BIQ.1"
 # Glocals
 INSTRUMENT_RUN_ID=""
 
-# AWS Account ID by prefix
-declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
-  ["843407916570"]="dev"
-  ["455634345446"]="stg"
-  ["472057503814"]="prod"
-)
-declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
-  ["ap-southeast-2_iWOHnsurL"]="dev"
-  ["ap-southeast-2_wWDrdTyzP"]="stg"
-  ["ap-southeast-2_HFrQ3aWm8"]="prod"
-)
-
 # Functions
 echo_stderr(){
   echo "$(date -Iseconds)" "$@" >&2
-}
-
-compare_script_version_to_repo(){
-  : '
-  Compare the version of this script to the version in the repo, and print a warning if they are different
-  '
-  repo_script_version="$( \
-	curl --silent --fail --location --show-error \
-	  --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" | \
-	(
-		grep -m1 "THIS_SCRIPT_VERSION" | \
-		cut -d'"' -f2
-	) || echo "unknown"
-  )"
-
-  if [[ "${THIS_SCRIPT_VERSION}" != "${repo_script_version}" ]]; then
-	echo_stderr "Warning: This script version (${THIS_SCRIPT_VERSION}) is different from the version in the repo (${repo_script_version})."
-	echo_stderr "Warning: Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
-  fi
 }
 
 print_usage(){
@@ -71,7 +40,7 @@ print_usage(){
   local hostname
   hostname="$(get_hostname_from_ssm)"
   if [[ -z "${hostname}" ]]; then
-	hostname="<aws_account_prefix>.umccr.org"
+    hostname="<aws_account_prefix>.umccr.org"
   fi
 
   echo "
@@ -108,6 +77,76 @@ bash generate-WRU-draft.sh <instrument_run_id> --comment 'Running bclconvert-int
 "
 }
 
+compare_script_version_to_repo(){
+  : '
+  Compare the version of this script to the version in the repo, and print a warning if they are different
+  If anywhere along the way fails, return unknown
+  '
+  repo_script_version="$( \
+    (
+      # Read the document from the main branch
+      curl --silent --fail --location --show-error \
+        --header "Accept: text/html" \
+        --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" | \
+      ( \
+        # Read through the whole document to prevent curl erroring out
+        tac | tac \
+      ) | \
+      (
+        # Get the first occurrence with grep -m1 (SOP_VERSION="YYYY.MM.DD")
+        # Remove the SOP_VERSION= prefix ("YYYY.MM.DD")
+        # Remove quotes (YYYY.MM.DD)
+        grep -m1 "SOP_VERSION" | \
+        sed 's/^SOP_VERSION=//' | \
+        jq --raw-output
+      ) \
+    ) || echo "unknown"
+  )"
+
+  if [[ "${SOP_VERSION}" != "${repo_script_version}" ]]; then
+    echo_stderr "Warning: This script version (${SOP_VERSION}) is different from the version in the repo (${repo_script_version})."
+    echo_stderr "         Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
+  fi
+}
+
+check_binaries(){
+  : '
+  Check that required binaries are installed
+  '
+  for binary in aws semver jq curl openssl awk; do
+    if ! command -v "${binary}" > /dev/null 2>&1; then
+      echo_stderr "Error: ${binary} is not installed. Please install ${binary} and try again. Exiting."
+      return 1
+    fi
+  done
+
+  # Check that jq is version 1.7 or higher, as we use the fromjson function which was added in 1.7
+  jq_version="$(jq --version | cut -d'-' -f2)"
+  if [[ "${jq_version}" =~ ^1.\d$ && ! "${jq_version}" == "1.7" ]]; then
+    echo_stderr "Error: jq version 1.7 or higher is required. Please update jq and try again. Exiting."
+    return 1
+  fi
+  # After version 1.7, jq changed their versioning to semver, so we can use semver to compare versions
+  if [[ ! "$(semver compare "${jq_version}" "${MIN_REQUIREMENTS["jq"]}")" -ge 0 ]]; then
+    echo_stderr "Error: jq version ${MIN_REQUIREMENTS["jq"]} or higher is required. Please update jq and try again. Exiting."
+    return 1
+  fi
+
+  # Check aws cli version is 2.0.0 or higher, as we use the --cli-binary-format option which was added in 2.0.0
+  aws_version="$(aws --version 2>&1 | awk '{print $1}' | cut -d'/' -f2)"
+  if [[ ! "$(semver compare "${aws_version}" "${MIN_REQUIREMENTS["aws"]}")" -ge 0 ]]; then
+    echo_stderr "Error: AWS CLI version ${MIN_REQUIREMENTS["aws"]} or higher is required. Please update AWS CLI and try again. Exiting."
+    return 1
+  fi
+
+  # Check curl version is 7.76.0 or higher, as we use the --fail-with-body option which was added in 7.76.0
+  curl_version="$(curl --version | head -n1 | awk '{print $2}')"
+  if [[ ! "$(semver compare "${curl_version}" "${MIN_REQUIREMENTS["curl"]}")" -ge 0 ]]; then
+    echo_stderr "Error: curl version ${MIN_REQUIREMENTS["curl"]} or higher is required. Please update curl and try again. Exiting."
+    return 1
+  fi
+}
+
 get_email_from_portal_token(){
   : '
   Get the email to use from the portal JWT
@@ -115,35 +154,81 @@ get_email_from_portal_token(){
   once the event is pushed to EventBridge and the workflow run is created,
   to indicate who created the workflow run
   '
-  cut -d'.' -f2 <<< "${PORTAL_TOKEN}" | \
-  (base64 --decode 2>/dev/null || true) | \
-  jq --raw-output '.email'
+  jq --raw-output \
+    --null-input \
+    --arg portalToken "${PORTAL_TOKEN}" \
+    '
+      (
+        # Get the middle chunk of the portal jwt token
+        $portalToken | split(".")[1] |
+        # Decode base64
+        @base64d |
+        # Load json
+        fromjson
+      ) |
+      .email
+    '
 }
 
 get_hostname_from_ssm(){
   : '
-  Get the hostname from SSM Parameter Store
+    Cache the hostname in a global variable to
+    avoid multiple calls to SSM Parameter Store
   '
-  # Cache the hostname in a global variable to
-  # avoid multiple calls to SSM Parameter Store
+  local hostname
+  local hostname_ssm_parameter_path
+  hostname_ssm_parameter_path="/hosted_zone/umccr/name"
   if [[ -n "${HOSTNAME}" ]]; then
-	echo "${HOSTNAME}"
-	return
+    echo "${HOSTNAME}"
+    return
   fi
 
-  # Get the hostname from SSM Parameter Store and
-  # cache it in the HOSTNAME global variable
-  aws ssm get-parameter \
-    --name "/hosted_zone/umccr/name" \
-    --output json | \
-  jq --raw-output \
-    '.Parameter.Value'
+  if ! hostname="$( \
+    aws ssm get-parameter \
+      --name "${hostname_ssm_parameter_path}" \
+      --output json | \
+    jq --raw-output \
+      '.Parameter.Value' \
+  )"; then
+    echo_stderr "Error! Cannot get ssm parameter path ${hostname_ssm_parameter_path}"
+    echo_stderr "       Ensure you're in the correct AWS account and logged in"
+    return 1
+  fi
+  echo "${hostname}"
+}
+
+get_aws_account_prefix(){
+  local aws_account_id
+  aws_account_id="$( \
+    aws sts get-caller-identity --output json --query "Account" | \
+    jq --raw-output \
+  )"
+  echo "${PREFIX_BY_AWS_ACCOUNT_ID[${aws_account_id}]:-"unknown_aws_account_prefix"}"
+}
+
+get_cognito_user_pool_id_prefix(){
+  local cognito_user_pool_id
+  cognito_user_pool_id="$( \
+    jq --raw-output \
+      --null-input \
+      --arg portalToken "${PORTAL_TOKEN}" \
+      '
+        (
+          # Get the middle chunk of the portal jwt token
+          $portalToken | split(".")[1] |
+          # Decode base64
+          @base64d |
+          # Load json
+          fromjson
+        ) |
+        .iss |
+        split("/")[-1]
+      ' \
+  )"
+  echo "${COGNITO_USER_POOL_ID_BY_PREFIX[${cognito_user_pool_id}]:-"unknown_cognito_user_pool_id"}"
 }
 
 get_library_obj_from_library_id(){
-  : '
-  Get the library object (libraryId and orcabusId) from the library id
-  '
   local library_id="$1"
   curl --silent --fail --show-error --location \
     --header "Authorization: Bearer ${PORTAL_TOKEN}" \
@@ -158,6 +243,17 @@ get_library_obj_from_library_id(){
     '
 }
 
+generate_portal_run_id(){
+  echo "$(date -u +'%Y%m%d')$(openssl rand -hex 4)"
+}
+
+get_linked_libraries(){
+  for library_id in "${LIBRARY_ID_ARRAY[@]}"; do
+    get_library_obj_from_library_id "${library_id}"
+  done | \
+  jq --slurp --raw-output --compact-output
+}
+
 get_lambda_function_name(){
   aws lambda list-functions \
     --output json \
@@ -168,10 +264,6 @@ get_lambda_function_name(){
       map(select(.FunctionName | contains($functionName))) |
       .[0].FunctionName
     '
-}
-
-generate_portal_run_id(){
-  echo "$(date -u +'%Y%m%d')$(openssl rand -hex 4)"
 }
 
 get_libraries(){
@@ -219,7 +311,7 @@ get_workflow(){
          {
             "name": $workflowName,
             "version": $workflowVersion,
-			"executionEngine": $executionEngine,
+            "executionEngine": $executionEngine,
             "codeVersion": $codeVersion
          } |
          to_entries |
@@ -246,33 +338,44 @@ get_workflow_run(){
   jq --compact-output --raw-output \
     '
       if (.results | length) > 0 then
-		.results[0]
-	  else
-		empty
-	  end
+        .results[0]
+      else
+        empty
+      end
     '
 }
 
-list_all_workflow_versions(){
+generate_workflow_comment(){
   : '
-  This is a simple function to ensure that we can list all workflows and as such
-  the users portal token is from the same environmnet as our AWS profile
-
-  Given in order to list all workflows, we need to get the hostname from the aws ssm parameters
-  AND we need the portal token for the organisation, a failure here means that the two are mismatched
+  Generate a comment on the workflow run
   '
-  curl --silent --fail --location \
-	--request GET \
-	--get \
-	--header "Accept: application/json" \
-	--header "Authorization: Bearer ${PORTAL_TOKEN}" \
-	--url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow?name=${WORKFLOW_NAME}" > /dev/null
+  local workflow_run_orcabus_id="$1"
+  local email_address="$2"
+  curl --silent --fail-with-body --location --show-error \
+    --request "POST" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
+    --header "Content-Type: application/json" \
+    --data "$(
+      jq --null-input --raw-output \
+        --arg emailAddress "${email_address}" \
+        --arg sopId "${SOP_ID}" \
+        --arg sopVersion "${SOP_VERSION}" \
+        --arg comment "${COMMENT}" \
+        '
+          {
+            "text": "Pipeline executed manually via SOP \($sopId)/\($sopVersion) -- \($comment)",
+            "createdBy": $emailAddress
+          }
+        '
+    )" \
+    --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun/${workflow_run_orcabus_id}/comment/"
 }
 
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  	# Help
+    # Help
     -h|--help)
       print_usage
       exit 0
@@ -283,26 +386,26 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -c=*|--comment=*)
-	  COMMENT="${1#*=}"
-	  ;;
-  	# Force boolean
+      COMMENT="${1#*=}"
+      ;;
+    # Force boolean
     -f|--force)
       FORCE=true
       ;;
-  	# Unexpected keyword argument
-	-*)
-	  echo_stderr "Error: Unknown option: $1"
-	  print_usage
-	  exit 1
-	  ;;
-	# Positional arguments (instrument run id)
+    # Unexpected keyword argument
+    -*)
+      echo_stderr "Error: Unknown option: $1"
+      print_usage
+      exit 1
+      ;;
+    # Positional arguments (instrument run id)
     *)
       # Check if INSTRUMENT_RUN_ID is already set
       if [[ -n "${INSTRUMENT_RUN_ID}" ]]; then
         echo_stderr "Error: Multiple instrument run IDs provided. Only one is allowed."
         print_usage
         exit 1
-	  fi
+      fi
       INSTRUMENT_RUN_ID="$1"
       ;;
   esac
@@ -337,16 +440,59 @@ if ! aws sts get-caller-identity --output json > /dev/null 2>&1; then
 fi
 
 # Set hostname
-HOSTNAME="$(get_hostname_from_ssm)"
+if ! HOSTNAME="$(get_hostname_from_ssm)"; then
+  print_usage
+  exit 1
+fi
 
 # Check script version
 compare_script_version_to_repo
 
-# Check AWS CLI Configuration matches portal token configuration
-if ! list_all_workflows; then
-  echo_stderr "Error: Unable to list workflows. "
-  echo_stderr "This may indicate a mismatch between your AWS CLI configuration and your portal token."
-  echo_stderr "Please ensure that your AWS CLI is configured to access the same environment as your portal token. Exiting."
+# Check that we're running bash and it's version 4 or higher before declaring associative arrays
+if [[ ! -v BASH_VERSION || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo_stderr "Error! This script is not being run with bash, or bash version is less than 4.0. Exiting"
+  print_usage
+  exit 1
+fi
+
+# SCRIPT BINARY VERSION MIN REQUIREMENTS
+declare -A MIN_REQUIREMENTS=(
+  ["jq"]="1.7.0"     # For if without else options
+  ["aws"]="2.0.0"    # Because what are you doing still on V1?
+  ["curl"]="7.76.0"  # For --fail-with-body option
+)
+if ! check_binaries; then
+  echo_stderr "Error: One or more required binaries are not installed. Please install the required binaries and try again. Exiting."
+  print_usage
+  exit 1
+fi
+
+# AWS Account ID by prefix
+declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
+  ["843407916570"]="dev"
+  ["455634345446"]="stg"
+  ["472057503814"]="prod"
+)
+declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
+  ["ap-southeast-2_iWOHnsurL"]="dev"
+  ["ap-southeast-2_wWDrdTyzP"]="stg"
+  ["ap-southeast-2_HFrQ3aWm8"]="prod"
+)
+
+# Confirm that the aws account id associated with the credentials
+# Matches the cognito user pool id associated with the portal token,
+# to help catch users who have multiple AWS profiles configured and are using the wrong one
+if [[ "$(get_aws_account_prefix)" != "$(get_cognito_user_pool_id_prefix)" ]]; then
+  echo_stderr "Warning: The AWS account prefix associated with your AWS credentials ($(get_aws_account_prefix)) "
+  echo_stderr "         does not match the expected prefix for the portal token you provided ($(get_cognito_user_pool_id_prefix))."
+  echo_stderr "         This may cause API calls to fail due to authentication issues."
+  echo_stderr "         Please check that you are using the correct AWS profile and that your portal token is valid."
+fi
+
+# Get email address upfront
+if ! email_address="$(get_email_from_portal_token)"; then
+  echo_stderr "Error: Failed to extract email address from portal token."
+  echo_stderr "       The comment will not be created. Please check that your PORTAL_TOKEN is valid."
   exit 1
 fi
 
@@ -381,26 +527,26 @@ lambda_payload="$( \
     --arg instrumentRunId "${INSTRUMENT_RUN_ID}" \
     --argjson libraries "${libraries}" \
     '
-	  {
-		"status": "DRAFT",
-		"timestamp": (now | todateiso8601),
-		"workflow": $workflow,
-		"workflowRunName": (
-		  "umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] |
-		  gsub("\\."; "-")) + "--" + $portalRunId
-		),
-		"portalRunId": $portalRunId,
-		"libraries": $libraries,
-		"payload": {
-		  "version": $payloadVersion,
-		  "data": {
-		    "tags": {
-		      "instrumentRunId": $instrumentRunId,
-		      "libraryIdList": ($libraries | map(.libraryId)),
-		    }
-		  }
-		}
-	  }
+      {
+        "status": "DRAFT",
+        "timestamp": (now | todateiso8601),
+        "workflow": $workflow,
+        "workflowRunName": (
+          "umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] |
+          gsub("\\."; "-")) + "--" + $portalRunId
+        ),
+        "portalRunId": $portalRunId,
+        "libraries": $libraries,
+        "payload": {
+          "version": $payloadVersion,
+          "data": {
+            "tags": {
+              "instrumentRunId": $instrumentRunId,
+              "libraryIdList": ($libraries | map(.libraryId)),
+            }
+          }
+        }
+      }
     ' \
 )"
 
@@ -415,9 +561,14 @@ if [[ "${FORCE}" == "false" ]]; then
     fi
 fi
 
+# Set the trap
+LAMBDA_TMP_DIR="$(mktemp -d "LAMBDA_TMP_DIR_XXXXXX")"
+trap 'rm -rf "${LAMBDA_TMP_DIR:-}"' EXIT
+
 # Push the event to EventBridge
-mkfifo lambda_data_pipe
-errors_json="$(mktemp "errors.XXXXXX.json")"
+LAMBDA_DATA_PIPE="${LAMBDA_TMP_DIR}/lambda_data_pipe"
+mkfifo "${LAMBDA_DATA_PIPE}"
+errors_json="$(mktemp -p "${LAMBDA_TMP_DIR}" "errors.XXXXXX.json")"
 echo_stderr "Pushing the draft event for portalRunId ${portal_run_id} via WRU Validation Lambda Function"
 aws lambda invoke \
   --function-name "$(get_lambda_function_name)" \
@@ -425,70 +576,74 @@ aws lambda invoke \
   --cli-binary-format raw-in-base64-out \
   --no-cli-pager \
   --invocation-type 'RequestResponse' \
-  lambda_data_pipe 1>/dev/null & \
+  "${LAMBDA_DATA_PIPE}" 1>/dev/null & \
 jq --raw-output \
   '
-    if .statusCode != 200 then
-	  .body | fromjson
-	else
-	  empty
-	end
+  if .statusCode != 200 then
+    .body | fromjson
+  else
+    empty
+  end
   ' \
-  < lambda_data_pipe \
+  < "${LAMBDA_DATA_PIPE}" \
   > "${errors_json}" & \
 wait
-rm lambda_data_pipe
 
-# Check if there were any errors returned from the Lambda invocation
+# Check for errors from the Lambda invocation
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
   jq --raw-output '.' < "${errors_json}" 1>&2
-  rm "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
   exit 1
 else
-  rm "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
 fi
+
+# Remove trap
+trap - EXIT
 
 # Now wait for the workflow run to be registered by the workflow manager,
 # which should be done within a minute or two after pushing the event to EventBridge,
 # and get the workflow run object, which contains the Orcabus ID that we will use to link the
 # workflow run to the comment we will create in the next step
 echo_stderr "Waiting for the workflow run to be registered by the workflow manager"
+max_attempts=6  # 1 minute with 10-second intervals
+attempts=0
 while :; do
+  # Check if we've exceeded max attempts
+  if [[ "${attempts}" -ge "${max_attempts}" ]]; then
+    echo_stderr "Exceeded maximum attempts (${max_attempts}) to check for workflow run registration"
+    exit 1
+  fi
+
   workflow_run_object="$( \
-  	get_workflow_run "${portal_run_id}"
+    get_workflow_run "${portal_run_id}"
   )"
 
   # Check with the workflow manager for the workflow run object
   if [[ -n "${workflow_run_object}" ]]; then
     workflow_run_orcabus_id="$(jq --raw-output '.orcabusId' <<< "${workflow_run_object}")"
-	echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
-	break
+    echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
+    break
   else
-	echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
-	sleep 10
+    echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
+    sleep 10
+    attempts="$((attempts + 1))"
   fi
 done
 
 echo_stderr "Generating workflow comment"
-curl --fail-with-body --silent --location \
-  --request "POST" \
-  --header "Accept: application/json" \
-  --header "Authorization: Bearer ${PORTAL_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --data "$(
-  	jq --null-input --raw-output \
-  	  --arg emailAddress "$(get_email_from_portal_token)" \
-  	  --arg sopId "${SOP_ID}" \
-  	  --arg comment "${COMMENT}" \
-  	  '
-  	    {
-  	      "text": "Pipeline executed manually via SOP \($sopId) -- \($comment)",
-  	      "createdBy": $emailAddress
-  	    }
-  	  '
-  )" \
-  --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun/${workflow_run_orcabus_id}/comment/"
+if ! comment_response="$(generate_workflow_comment "${workflow_run_orcabus_id}" "${email_address}")"; then
+  echo_stderr "Warning: Failed to generate comment on workflow run."
+  echo_stderr "         Please check that your PORTAL_TOKEN is valid and has permission to comment on the workflow run. "
+  echo_stderr "         And contact the script author if the issue persists. The workflow run has been created successfully "
+  echo_stderr "         but the comment indicating who created the workflow run and why will be missing."
+  if parsed_error="$(jq -rc 2>/dev/null <<< "${comment_response}")"; then
+    echo_stderr "         Error details: ${parsed_error}"
+  else
+    echo_stderr "         Error details (unparsed): ${comment_response}"
+  fi
+fi
 
 echo_stderr "Workflow Run Creation Event complete!"
 echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/runs/workflow/${workflow_run_orcabus_id}' to track the status of the workflow run"
