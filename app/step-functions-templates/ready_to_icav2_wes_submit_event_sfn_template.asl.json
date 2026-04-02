@@ -139,11 +139,11 @@
               },
               "End": true,
               "Label": "Foreachmultiqcparquetfilebatched",
-              "MaxConcurrency": 1000,
+              "MaxConcurrency": 10,
               "ItemBatcher": {
                 "MaxItemsPerBatch": 10,
                 "BatchInput": {
-                  "itemCount": "{% $count($states.input.fastqIdList) %}",
+                  "itemCount": "{% $count($states.input.additionalMultiQcDataFiles) %}",
                   "cacheUri": "{% $readyEventDetail.payload.data.engineParameters.cacheUri %}"
                 }
               },
