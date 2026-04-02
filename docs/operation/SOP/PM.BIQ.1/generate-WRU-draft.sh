@@ -13,9 +13,9 @@ COMMENT=""   # Use -c or --comment to set
 
 # Workflow settings
 WORKFLOW_NAME="bclconvert-interop-qc"
-WORKFLOW_VERSION="1.5.0--1.31"
+WORKFLOW_VERSION="1.9.0--1.33"
 EXECUTION_ENGINE="ICA"
-CODE_VERSION="ea35fcd"
+CODE_VERSION="56670e1"
 PAYLOAD_VERSION="2026.04.01"
 
 GITHUB_REPO="OrcaBus/service-bclconvert-interop-qc-pipeline-manager"
