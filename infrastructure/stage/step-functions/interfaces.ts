@@ -94,6 +94,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getMultiqcParquetOutputsFromFastqIdList',
     'validateDraftDataCompleteSchema',
     'generateBclconvertInteropqcDraftDataEvent',
+    'addSampleFilters',
   ],
   // Validate Draft Data
   validateDraftToReady: ['validateDraftDataCompleteSchema'],
@@ -101,6 +102,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
   readyToIcav2WesSubmitEvent: [
     'bclconvertInteropqcReadyToIcav2WesRequest',
     'convertS3UriToIcav2Uri',
+    'writeSampleFiltersFile',
   ],
   // ICAv2 WES to WRSC event
   icav2WesEventToWrscEvent: ['convertIcav2WesStateChangeEventToWrscEvent'],

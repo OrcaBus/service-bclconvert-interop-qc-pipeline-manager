@@ -19,7 +19,10 @@
       },
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $payloadData %}"
+        "Payload": {
+          "payloadVersion": "{% $payload.version ? $payload.version : null %}",
+          "data": "{% $payloadData %}"
+        }
       },
       "Retry": [
         {

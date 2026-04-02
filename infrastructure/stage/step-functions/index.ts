@@ -18,7 +18,7 @@ import {
   EVENT_SOURCE,
   FASTQ_SYNC_DETAIL_TYPE,
   ICAV2_WES_REQUEST_DETAIL_TYPE,
-  PAYLOAD_VERSION,
+  DEFAULT_PAYLOAD_VERSION,
   READY_STATUS,
   STEP_FUNCTIONS_DIR,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
@@ -27,6 +27,7 @@ import {
 import { Construct } from 'constructs';
 import { camelCaseToSnakeCase, withStackPrefix } from '../utils';
 import { ContainerName } from '../ecs/interfaces';
+import { PayloadVersionType } from '../interfaces';
 
 function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps): {
   [key: string]: string;
@@ -44,11 +45,15 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     ecsContainerNamesInSfn.includes(<ContainerName>fargateObject.containerDefinition.containerName)
   );
 
+  definitionSubstitutions['__sample_filters_payload_version_threshold__'] = <PayloadVersionType>(
+    '2026.04.01'
+  );
+
   /* Substitute lambdas in the state machine definition */
   for (const lambdaObject of lambdaFunctions) {
     const sfnSubtitutionKey = `__${camelCaseToSnakeCase(lambdaObject.lambdaName)}_lambda_function_arn__`;
     definitionSubstitutions[sfnSubtitutionKey] =
-      lambdaObject.lambdaFunction.currentVersion.functionArn;
+      lambdaObject.lambdaFunction.latestVersion.functionArn;
   }
 
   /* Sfn Requirements */
@@ -61,7 +66,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions['__stack_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__icav2_wes_request_detail_type__'] = ICAV2_WES_REQUEST_DETAIL_TYPE;
     definitionSubstitutions['__fastq_sync_detail_type__'] = FASTQ_SYNC_DETAIL_TYPE;
-    definitionSubstitutions['__default_payload_version__'] = PAYLOAD_VERSION;
+    definitionSubstitutions['__default_payload_version__'] = DEFAULT_PAYLOAD_VERSION;
     definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
   }
 
@@ -81,7 +86,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions['__workflow_cache_prefix_ssm_parameter_name__'] =
       props.ssmParameterPaths.cachePrefix;
     definitionSubstitutions['__get_payload_version_ssm_parameter_name__'] =
-      props.ssmParameterPaths.payloadVersion;
+      props.ssmParameterPaths.defaultPayloadVersion;
   }
 
   if (sfnRequirements.needsEcsTaskExecutionPermission) {
@@ -122,8 +127,18 @@ function wireUpStateMachinePermissions(scope: Construct, props: WireUpPermission
 
   /* Allow the state machine to invoke the lambda function */
   for (const lambdaObject of lambdaFunctions) {
-    lambdaObject.lambdaFunction.currentVersion.grantInvoke(props.sfnObject);
+    lambdaObject.lambdaFunction.grantInvoke(props.sfnObject);
   }
+  NagSuppressions.addResourceSuppressions(
+    props.sfnObject,
+    [
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'We need to give access to the full prefix of each lambda function',
+      },
+    ],
+    true
+  );
 
   if (sfnRequirements.needsEventPutPermission) {
     props.eventBus.grantPutEventsTo(props.sfnObject);

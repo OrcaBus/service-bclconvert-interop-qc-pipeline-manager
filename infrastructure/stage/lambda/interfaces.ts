@@ -11,9 +11,11 @@ export type LambdaName =
   | 'getBsshFastqOutputs'
   | 'getMultiqcParquetOutputsFromFastqIdList'
   | 'generateBclconvertInteropqcDraftDataEvent'
+  | 'addSampleFilters'
   // Ready to ICAv2 WES
   | 'bclconvertInteropqcReadyToIcav2WesRequest'
   | 'convertS3UriToIcav2Uri'
+  | 'writeSampleFiltersFile'
   // Post Submitted
   | 'convertIcav2WesStateChangeEventToWrscEvent';
 
@@ -25,9 +27,11 @@ export const lambdaNameList: LambdaName[] = [
   'getBsshFastqOutputs',
   'getMultiqcParquetOutputsFromFastqIdList',
   'generateBclconvertInteropqcDraftDataEvent',
+  'addSampleFilters',
   // Ready to ICAv2 WES
   'bclconvertInteropqcReadyToIcav2WesRequest',
   'convertS3UriToIcav2Uri',
+  'writeSampleFiltersFile',
   // Post Submitted
   'convertIcav2WesStateChangeEventToWrscEvent',
 ];
@@ -38,6 +42,7 @@ export interface LambdaRequirements {
   needsIcav2Tools?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
+  needsHigherMemory?: boolean;
 }
 
 // Lambda requirements mapping
@@ -60,12 +65,20 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   generateBclconvertInteropqcDraftDataEvent: {
     needsOrcabusApiTools: true,
   },
+  addSampleFilters: {
+    needsOrcabusApiTools: true,
+  },
   // Ready to ICAv2 WES
   bclconvertInteropqcReadyToIcav2WesRequest: {
     needsOrcabusApiTools: true,
   },
   convertS3UriToIcav2Uri: {
     needsIcav2Tools: true,
+    needsHigherMemory: true,
+  },
+  writeSampleFiltersFile: {
+    needsIcav2Tools: true,
+    needsHigherMemory: true,
   },
   // Post Submitted
   convertIcav2WesStateChangeEventToWrscEvent: {

@@ -29,9 +29,9 @@ export function buildSsmParameters(scope: Construct, props: BuildSsmParameterPro
    * Payload level SSM Parameters
    */
   // Payload version
-  new ssm.StringParameter(scope, 'payload-version', {
-    parameterName: props.ssmParameterPaths.payloadVersion,
-    stringValue: props.ssmParameterValues.payloadVersion,
+  new ssm.StringParameter(scope, 'default-payload-version', {
+    parameterName: props.ssmParameterPaths.defaultPayloadVersion,
+    stringValue: props.ssmParameterValues.defaultPayloadVersion,
   });
 
   /**
