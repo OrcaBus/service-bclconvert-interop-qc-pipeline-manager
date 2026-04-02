@@ -470,7 +470,7 @@
           }
         }
       ],
-      "Arguments": {
+      "Assign": {
         "inputs": "{% [\n  $inputs,\n  ($states.result ~> $merge)\n] ~> $merge %}"
       }
     },
