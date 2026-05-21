@@ -181,7 +181,7 @@
               "Choices": [
                 {
                   "Next": "Write sample filters file to cache dir",
-                  "Condition": "{% $readyEventDetail.payload.data.inputs.sampleFiltersJson %}"
+                  "Condition": "{% $readyEventDetail.payload.data.inputs.sampleFiltersJson ? true : false %}"
                 }
               ],
               "Default": "No sample filters to write"

@@ -156,7 +156,7 @@ def main():
             data_uri=destination_folder_uri + MULTIQC_PARQUET_NAME,
             create_data_if_not_found=False
         )
-    except ApiException:
+    except FileNotFoundError:
         # We expect this
         pass
     else:
@@ -175,7 +175,7 @@ def main():
                     data_path=Path(str(destination_file_object.data.details.path)),
                     data_type='FILE'
                 )
-            except (ApiException, FileNotFoundError):
+            except FileNotFoundError:
                 break
 
     # Create the upload url
