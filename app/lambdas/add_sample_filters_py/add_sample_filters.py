@@ -69,13 +69,12 @@ def handler(event, context):
 
     # Get the library objects from the instrument run ids
     library_object_df = pd.DataFrame(get_libraries_list_from_library_id_list(library_id_list))
-    library_object_df["projectId"] = library_object_df['projectSet'].apply(lambda project_set_iter_: project_set_iter_[-1]['name'])
+    library_object_df["projectId"] = library_object_df['projectSet'].apply(
+        lambda project_set_iter_: project_set_iter_[-1]['projectId'])
 
     # Collect the following combinations
     for (sample_type, assay), sample_type_assay_df in library_object_df.groupby(['type', 'assay']):
-        project_id_list = list(set(
-            sample_type_assay_df['projectSet'].apply(lambda project_set_iter_: project_set_iter_[-1]['name']).tolist()
-        ))
+        project_id_list = sample_type_assay_df['projectId'].unique().tolist()
 
         # If not a single project make a combined entry of type/assay
         if not len(project_id_list) == 1:
@@ -87,7 +86,7 @@ def handler(event, context):
                 }
             )
 
-        for project_id, sample_type_assay_project_df in sample_type_assay_df.groupby(['projectId']):
+        for project_id, sample_type_assay_project_df in sample_type_assay_df.groupby('projectId'):
             # Get libraries with matching project id
             sample_filters_json.append(
                 {
