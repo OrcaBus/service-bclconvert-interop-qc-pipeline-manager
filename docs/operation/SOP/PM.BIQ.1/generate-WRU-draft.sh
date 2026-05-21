@@ -38,8 +38,8 @@ print_usage(){
   Print usage
   '
   local hostname
-  hostname="$(get_hostname_from_ssm)"
-  if [[ -z "${hostname}" ]]; then
+
+  if ! hostname="$(get_hostname_from_ssm)"; then
     hostname="<aws_account_prefix>.umccr.org"
   fi
 
@@ -247,13 +247,6 @@ generate_portal_run_id(){
   echo "$(date -u +'%Y%m%d')$(openssl rand -hex 4)"
 }
 
-get_linked_libraries(){
-  for library_id in "${LIBRARY_ID_ARRAY[@]}"; do
-    get_library_obj_from_library_id "${library_id}"
-  done | \
-  jq --slurp --raw-output --compact-output
-}
-
 get_lambda_function_name(){
   aws lambda list-functions \
     --output json \
@@ -445,9 +438,6 @@ if ! HOSTNAME="$(get_hostname_from_ssm)"; then
   exit 1
 fi
 
-# Check script version
-compare_script_version_to_repo
-
 # Check that we're running bash and it's version 4 or higher before declaring associative arrays
 if [[ ! -v BASH_VERSION || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   echo_stderr "Error! This script is not being run with bash, or bash version is less than 4.0. Exiting"
@@ -466,6 +456,9 @@ if ! check_binaries; then
   print_usage
   exit 1
 fi
+
+# Check script version
+compare_script_version_to_repo
 
 # AWS Account ID by prefix
 declare -A PREFIX_BY_AWS_ACCOUNT_ID=(

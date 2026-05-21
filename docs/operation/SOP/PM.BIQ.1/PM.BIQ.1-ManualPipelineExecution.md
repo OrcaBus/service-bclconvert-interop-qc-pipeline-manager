@@ -32,8 +32,8 @@ For convenience, we provide a shell script that generates and optionally submits
 - Familiarise yourself with the script and its parameters: [generate-WRU-draft.sh --help](./generate-WRU-draft.sh)
   - Especially check the settings in the `Globals` section
     - ensure the values are fit for your use case, e.g. for clinical samples match the accredited pipeline details
-  - Set the engine parameters (if necessary) and library id(s) in the positional arguments.
-- Execute the script (e.g. `bash generate-WRU-draft.sh --comment 'Manual rerun' <instrument_run_id>`)
+  - Set any engine parameters (if necessary). The instrument run ID must be provided as the positional argument; libraries are discovered automatically.
+  - Execute the script (e.g. `bash generate-WRU-draft.sh --comment 'Manual rerun' <instrument_run_id>`)
   - Note: AWS credentials need to be set on the environment as does your PORTAL_TOKEN (see the script for details)
   - Use the comment parameter to explain the reason for the manual run, this will be visible in the Portal and helpful for future reference.
 - The script should produce the JSON output of the DRAFT event that can be inspected to double-check that reflects the intended request
