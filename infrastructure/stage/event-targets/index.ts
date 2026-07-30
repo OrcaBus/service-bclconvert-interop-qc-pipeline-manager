@@ -43,27 +43,27 @@ export function buildAllEventBridgeTargets(scope: Construct, props: EventBridgeT
         break;
       }
 
-      // Validate draft data
-      case 'draftToValidateDraftSfnTarget': {
+      // Validate draft data and put ready event
+      case 'draftToValidateDraftDataAndPutReadyEventSfnTarget': {
         buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
             (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraft'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (sfnObject) => sfnObject.stateMachineName === 'validateDraftToReady'
+            (sfnObject) => sfnObject.stateMachineName === 'validateDraftDataAndPutReadyEvent'
           )?.sfnObject,
         });
         break;
       }
 
-      // Ready to Icav2 Wes Submitted
-      case 'readyToIcav2WesSubmiitedSfnTarget': {
+      // Ready event to ICAv2 WES request event
+      case 'readyToIcav2WesRequestEventSfnTarget': {
         buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
             (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscReady'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (sfnObject) => sfnObject.stateMachineName === 'readyToIcav2WesSubmitEvent'
+            (sfnObject) => sfnObject.stateMachineName === 'readyEventToIcav2WesRequestEvent'
           )?.sfnObject,
         });
         break;

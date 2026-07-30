@@ -9,20 +9,20 @@ import { StepFunctionObject } from '../step-functions/interfaces';
 export type EventBridgeTargetName =
   // Populate draft data event targets
   | 'draftToPopulateDraftDataSfnTarget'
-  // Validate draft to ready
-  | 'draftToValidateDraftSfnTarget'
-  // Ready to InterOp QC
-  | 'readyToIcav2WesSubmiitedSfnTarget'
+  // Validate draft data and put ready event
+  | 'draftToValidateDraftDataAndPutReadyEventSfnTarget'
+  // Ready event to ICAv2 WES request event
+  | 'readyToIcav2WesRequestEventSfnTarget'
   // Post submitted
   | 'icav2WesAnalysisStateChangeEventToWrscSfnTarget';
 
 export const eventBridgeTargetsNameList: EventBridgeTargetName[] = [
   // Populate draft data event targets
   'draftToPopulateDraftDataSfnTarget',
-  // Validate draft to ready
-  'draftToValidateDraftSfnTarget',
-  // Ready to InterOp QC
-  'readyToIcav2WesSubmiitedSfnTarget',
+  // Validate draft data and put ready event
+  'draftToValidateDraftDataAndPutReadyEventSfnTarget',
+  // Ready event to ICAv2 WES request event
+  'readyToIcav2WesRequestEventSfnTarget',
   // Post submitted
   'icav2WesAnalysisStateChangeEventToWrscSfnTarget',
 ];
