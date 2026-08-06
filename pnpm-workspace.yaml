@@ -3,3 +3,13 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - aws-cdk-lib@2.256.1
   - aws-cdk@2.1124.1
+  - js-yaml@3.15.0
+  - '@babel/core@7.29.1'
+  - brace-expansion@1.1.16 || 1.1.17 || 1.1.18
+overrides:
+  '@babel/core@<=7.29.0': ^7.29.1
+  brace-expansion@<1.1.16: ^1.1.16
+  brace-expansion@<1.1.17: ^1.1.17
+  brace-expansion@<1.1.18: ^1.1.18
+  js-yaml@<3.15.0: ^3.15.0
+  js-yaml@>=3.0.0 <3.15.0: ^3.15.0
