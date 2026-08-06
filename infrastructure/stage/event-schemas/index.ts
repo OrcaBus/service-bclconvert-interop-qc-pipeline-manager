@@ -20,7 +20,7 @@ export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.
     EVENT_SCHEMAS_DIR,
     camelCaseToKebabCase(props.schemaName),
     props.payloadVersion,
-    'schema.json'
+    `${camelCaseToKebabCase(props.schemaName)}-schema.json`
   );
 
   // Create a new schema in the Event Schemas service
@@ -66,13 +66,9 @@ export function buildSchemas(scope: Construct) {
           /*
           Add an additional ssm parameter pointing the payload version to the latest version
            */
-          new ssm.StringParameter(scope, `${schemaName}-default-ssm`, {
+          new ssm.StringParameter(scope, `${schemaName}-default--ssm`, {
             parameterName: path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(schemaName), 'default'),
-            stringValue: JSON.stringify({
-              registryName: schemaObj.registryName,
-              schemaName: schemaObj.attrSchemaName,
-              schemaVersion: schemaObj.attrSchemaVersion,
-            }),
+            stringValue: DEFAULT_PAYLOAD_VERSION,
           });
         }
       }

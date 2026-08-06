@@ -1,6 +1,6 @@
 import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { LambdaName, LambdaObject } from '../lambda/interfaces';
+import { LambdaNameList, LambdaObject } from '../lambda/interfaces';
 import { SsmParameterPaths } from '../ssm/interfaces';
 import { EcsFargateTaskConstruct } from '@orcabus/platform-cdk-constructs/ecs';
 import { ContainerName } from '../ecs/interfaces';
@@ -11,21 +11,21 @@ import { ContainerName } from '../ecs/interfaces';
 export type StateMachineName =
   // Populate Draft Data Events
   | 'populateDraftData'
-  // Validate Draft Data
-  | 'validateDraftToReady'
-  // Ready to ICAv2 WES
-  | 'readyToIcav2WesSubmitEvent'
-  // BSSH Fastq to WRSC event
+  // Validate Draft Data and Put Ready Event
+  | 'validateDraftDataAndPutReadyEvent'
+  // Ready Event to ICAv2 WES Request Event
+  | 'readyEventToIcav2WesRequestEvent'
+  // ICAv2 WES Event to WRSC Event
   | 'icav2WesEventToWrscEvent';
 
 export const stateMachineNameList: StateMachineName[] = [
   // Populate Draft Data Events
   'populateDraftData',
-  // Validate Draft Data
-  'validateDraftToReady',
-  // Ready to ICAv2 WES
-  'readyToIcav2WesSubmitEvent',
-  // BSSH Fastq to WRSC event
+  // Validate Draft Data and Put Ready Event
+  'validateDraftDataAndPutReadyEvent',
+  // Ready Event to ICAv2 WES Request Event
+  'readyEventToIcav2WesRequestEvent',
+  // ICAv2 WES Event to WRSC Event
   'icav2WesEventToWrscEvent',
 ];
 
@@ -70,23 +70,23 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
     needsSsmParameterStoreAccess: true,
     needsDistributedMapPermissions: true,
   },
-  // Validate Draft Data
-  validateDraftToReady: {
+  // Validate Draft Data and Put Ready Event
+  validateDraftDataAndPutReadyEvent: {
     needsEventPutPermission: true,
   },
-  // Ready to ICAv2 WES
-  readyToIcav2WesSubmitEvent: {
+  // Ready Event to ICAv2 WES Request Event
+  readyEventToIcav2WesRequestEvent: {
     needsEventPutPermission: true,
     needsEcsTaskExecutionPermission: true,
     needsDistributedMapPermissions: true,
   },
-  // ICAv2 WES to WRSC event
+  // ICAv2 WES Event to WRSC Event
   icav2WesEventToWrscEvent: {
     needsEventPutPermission: true,
   },
 };
 
-export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
+export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaNameList[]> = {
   // Populate Draft Data Events
   populateDraftData: [
     'getFastqIdsInInstrumentRunId',
@@ -95,26 +95,31 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'validateDraftDataCompleteSchema',
     'generateBclconvertInteropqcDraftDataEvent',
     'addSampleFilters',
+    'addPopulateDraftComment',
+    'comparePayload',
+    'generateWruEventObjectWithMergedData',
+    'getMissingSchemaFields',
   ],
-  // Validate Draft Data
-  validateDraftToReady: ['validateDraftDataCompleteSchema'],
-  // Ready to ICAv2 WES
-  readyToIcav2WesSubmitEvent: [
+  // Validate Draft Data and Put Ready Event
+  validateDraftDataAndPutReadyEvent: ['validateDraftDataCompleteSchema', 'postSchemaValidation'],
+  // Ready Event to ICAv2 WES Request Event
+  readyEventToIcav2WesRequestEvent: [
+    'addReadyComment',
     'bclconvertInteropqcReadyToIcav2WesRequest',
     'convertS3UriToIcav2Uri',
     'writeSampleFiltersFile',
   ],
-  // ICAv2 WES to WRSC event
-  icav2WesEventToWrscEvent: ['convertIcav2WesStateChangeEventToWrscEvent'],
+  // ICAv2 WES Event to WRSC Event
+  icav2WesEventToWrscEvent: ['convertIcav2WesStateChangeEventToWrscEvent', 'addWesFailureComment'],
 };
 
 export const stepFunctionToContainerNamesMap: Record<StateMachineName, ContainerName[]> = {
   // Populate Draft Data Events
   populateDraftData: [],
-  // Validate Draft Data
-  validateDraftToReady: [],
-  // Ready to ICAv2 WES
-  readyToIcav2WesSubmitEvent: ['resampleMultiqcParquetFile'],
-  // ICAv2 WES to WRSC event
+  // Validate Draft Data and Put Ready Event
+  validateDraftDataAndPutReadyEvent: [],
+  // Ready Event to ICAv2 WES Request Event
+  readyEventToIcav2WesRequestEvent: ['resampleMultiqcParquetFile'],
+  // ICAv2 WES Event to WRSC Event
   icav2WesEventToWrscEvent: [],
 };

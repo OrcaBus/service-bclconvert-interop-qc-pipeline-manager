@@ -68,17 +68,18 @@ function buildFargateTask(
     [
       {
         id: 'AwsSolutions-IAM5',
-        reason: 'The task role needs to access secrets manager.',
+        reason:
+          'Wildcard covers KMS decrypt for SecretsManager-managed encryption keys; specific key ARNs cannot be enumerated because they are managed by the Secrets Manager service',
       },
       {
         id: 'AwsSolutions-IAM4',
         reason:
-          'We use the standard ecs task role for this task, which allows the guard duty agent to run alongside the task.',
+          'Standard ECS task execution role managed policy allows GuardDuty agent to run alongside the task',
       },
       {
         id: 'AwsSolutions-ECS2',
         reason:
-          'The task is designed to run with some constant environment variables, not sure why this is a bad thing?',
+          'Environment variables contain non-sensitive configuration values such as SSM parameter names and API base URLs',
       },
     ],
     true

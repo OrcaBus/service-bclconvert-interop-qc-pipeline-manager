@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1200px" height="860px" viewBox="-0.5 -0.5 1200 860">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555555"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888888"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#b85450"/>
+    </marker>
+  </defs>
+  <g>
+    <!-- Title -->
+    <text x="600" y="20" text-anchor="middle" font-family="Helvetica" font-size="16" font-weight="bold" fill="#333333">Populate Draft Data</text>
+
+    <!-- ═══════ COLUMN A (left) ═══════ -->
+
+    <!-- Start -->
+    <ellipse cx="175" cy="55" rx="30" ry="18" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"/>
+    <text x="175" y="60" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Start</text>
+
+    <!-- Arrow: Start → Validate -->
+    <line x1="175" y1="73" x2="175" y2="95" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Validate draft data -->
+    <rect x="25" y="95" width="300" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="125" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Validate draft data</text>
+
+    <!-- Arrow: Validate → Decision -->
+    <line x1="175" y1="145" x2="175" y2="170" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Decision: Payload already complete? -->
+    <polygon points="175,170 295,205 175,240 55,205" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="175" y="203" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Payload already</text>
+    <text x="175" y="217" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">complete?</text>
+
+    <!-- Arrow: Complete → Nothing to do -->
+    <line x1="295" y1="205" x2="400" y2="205" stroke="#888888" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrow-gray)"/>
+    <text x="345" y="196" text-anchor="middle" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">Yes</text>
+
+    <!-- Nothing to do -->
+    <ellipse cx="480" cy="205" rx="60" ry="20" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="480" y="210" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Nothing to do</text>
+
+    <!-- Arrow: Not complete → Resolve engine params -->
+    <line x1="175" y1="240" x2="175" y2="270" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="195" y="258" text-anchor="start" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">No</text>
+
+    <!-- Step: Resolve engine parameters -->
+    <rect x="25" y="270" width="300" height="60" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="293" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Resolve engine parameters</text>
+    <text x="175" y="313" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">projectId · pipelineId · outputUri · logsUri · cacheUri</text>
+
+    <!-- Arrow: Resolve → Tags changed? -->
+    <line x1="175" y1="330" x2="175" y2="360" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Decision: Tags or engine params changed? -->
+    <polygon points="175,360 295,395 175,430 55,395" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="175" y="393" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Tags or params</text>
+    <text x="175" y="407" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">changed?</text>
+
+    <!-- Arrow: Changed → Put DRAFT update (partial) -->
+    <line x1="295" y1="395" x2="395" y2="395" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="340" y="386" text-anchor="middle" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">Changed</text>
+
+    <!-- Step: Put DRAFT update (partial) -->
+    <rect x="395" y="370" width="220" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="505" y="390" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Put DRAFT update event</text>
+    <text x="505" y="407" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">tags / params updated</text>
+
+    <!-- Arrow: Put DRAFT (partial) → Success -->
+    <line x1="505" y1="420" x2="505" y2="450" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <ellipse cx="505" cy="470" rx="50" ry="18" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="505" y="474" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">End</text>
+
+    <!-- Arrow: No change → Get FASTQ inputs -->
+    <line x1="175" y1="430" x2="175" y2="510" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="195" y="470" text-anchor="start" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">No change</text>
+
+    <!-- Step: Get FASTQ inputs -->
+    <rect x="25" y="510" width="300" height="60" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="533" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Get FASTQ inputs</text>
+    <text x="175" y="553" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">interOp · bclConvertReport · multiQC parquet</text>
+
+    <!-- Arrow: Get FASTQ → FASTQ sync -->
+    <line x1="175" y1="570" x2="175" y2="600" stroke="#b85450" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrow-red)"/>
+
+    <!-- Step: FASTQ sync (wait) -->
+    <rect x="25" y="600" width="300" height="60" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+    <text x="175" y="623" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">FASTQ sync</text>
+    <text x="175" y="643" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">waitForTaskToken · QC per batch</text>
+
+    <!-- ═══════ COLUMN B (right) ═══════ -->
+
+    <!-- Arrow: FASTQ sync → Add sample filters (cross-column connector shown as label) -->
+    <polyline points="175,660 175,690 550,690 550,120 575,120" fill="none" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Add sample filters -->
+    <rect x="575" y="95" width="300" height="60" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="725" y="118" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Add sample filters</text>
+    <text x="725" y="138" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">if payload version ≥ threshold</text>
+
+    <!-- Arrow: Add sample filters → Generate WRU + Compare -->
+    <line x1="725" y1="155" x2="725" y2="185" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Generate WRU event + Compare payload -->
+    <rect x="575" y="185" width="300" height="60" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="725" y="208" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Generate WRU event &amp; compare</text>
+    <text x="725" y="228" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">build merged payload · diff old vs new</text>
+
+    <!-- Arrow: Compare → Payload changed? -->
+    <line x1="725" y1="245" x2="725" y2="275" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Decision: Payload changed? -->
+    <polygon points="725,275 845,310 725,345 605,310" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="725" y="314" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Payload changed?</text>
+
+    <!-- Arrow: Changed → Put DRAFT update (full) -->
+    <line x1="725" y1="345" x2="725" y2="380" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="745" y="365" text-anchor="start" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">Yes</text>
+
+    <!-- Step: Put DRAFT update event (full) -->
+    <rect x="575" y="380" width="300" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="725" y="400" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Put DRAFT update event</text>
+    <text x="725" y="417" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">fully populated payload</text>
+
+    <!-- Arrow: Put DRAFT (full) → Success -->
+    <line x1="725" y1="430" x2="725" y2="460" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <ellipse cx="725" cy="480" rx="50" ry="18" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="725" y="484" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Success</text>
+
+    <!-- Arrow: No change → Get missing fields -->
+    <line x1="845" y1="310" x2="920" y2="310" stroke="#888888" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrow-gray)"/>
+    <text x="880" y="300" text-anchor="middle" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">No</text>
+
+    <!-- Step: Get missing fields + add comment -->
+    <rect x="920" y="285" width="260" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="1050" y="305" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">Get missing fields &amp; add comment</text>
+    <text x="1050" y="322" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">report missing schema fields</text>
+
+    <!-- Arrow: Missing fields → Success -->
+    <line x1="1050" y1="335" x2="1050" y2="365" stroke="#888888" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrow-gray)"/>
+    <ellipse cx="1050" cy="385" rx="50" ry="18" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="1050" y="389" text-anchor="middle" font-family="Helvetica" font-size="11" font-weight="bold" fill="#1a1a1a">End</text>
+  </g>
+</svg>

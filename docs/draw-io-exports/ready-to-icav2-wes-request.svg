@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="720px" height="780px" viewBox="-0.5 -0.5 720 780">
+  <defs/>
+  <g>
+    <!-- Title -->
+    <text x="360" y="20" text-anchor="middle" font-family="Helvetica" font-size="16" font-weight="bold" fill="#333333">Ready Event → ICAv2 WES Request</text>
+
+    <!-- Start -->
+    <ellipse cx="175" cy="60" rx="30" ry="18" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"/>
+    <text x="175" y="65" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Start</text>
+
+    <!-- Arrow: Start → Add ready comment -->
+    <line x1="175" y1="78" x2="175" y2="100" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Add ready comment -->
+    <rect x="25" y="100" width="300" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="130" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Add ready comment (traceability)</text>
+
+    <!-- Arrow: Add ready comment → Resample MultiQC -->
+    <line x1="175" y1="150" x2="175" y2="180" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Resample MultiQC parquet files (ECS) -->
+    <rect x="25" y="180" width="300" height="60" rx="8" ry="8" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+    <text x="175" y="203" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Resample MultiQC parquet files</text>
+    <text x="175" y="223" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">ECS task · rename samples · upload to cache</text>
+
+    <!-- Arrow: Resample → Has sample filters? -->
+    <line x1="175" y1="240" x2="175" y2="270" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Decision: Has sample filters? -->
+    <polygon points="175,270 295,310 175,350 55,310" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="175" y="315" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Has sample filters?</text>
+
+    <!-- Arrow: Has sample filters → Yes → Write sample filters -->
+    <line x1="295" y1="310" x2="400" y2="310" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="340" y="300" text-anchor="middle" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">Yes</text>
+
+    <!-- Step: Write sample filters file -->
+    <rect x="400" y="285" width="260" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="530" y="305" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Write sample filters file</text>
+    <text x="530" y="323" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#555555">sample_filters.tsv → cache URI</text>
+
+    <!-- Arrow: Write sample filters → Convert (rejoin) -->
+    <polyline points="530,335 530,410 325,410" fill="none" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Arrow: Has sample filters → No → Convert -->
+    <line x1="175" y1="350" x2="175" y2="385" stroke="#888888" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#arrow)"/>
+    <text x="195" y="370" text-anchor="start" font-family="Helvetica" font-size="10" font-style="italic" fill="#888888">No</text>
+
+    <!-- Step: Convert Ready Event to ICAv2 WES inputs -->
+    <rect x="25" y="385" width="300" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="415" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Convert Ready Event to ICAv2 WES inputs</text>
+
+    <!-- Arrow: Convert → Push WES Event -->
+    <line x1="175" y1="435" x2="175" y2="470" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Step: Push WES Event -->
+    <rect x="25" y="470" width="300" height="50" rx="8" ry="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="175" y="500" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Push ICAv2 WES request event</text>
+
+    <!-- Arrow: Push WES → Success -->
+    <line x1="175" y1="520" x2="175" y2="555" stroke="#555555" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Terminal: Success -->
+    <ellipse cx="175" cy="575" rx="60" ry="20" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="175" y="580" text-anchor="middle" font-family="Helvetica" font-size="12" font-weight="bold" fill="#1a1a1a">Success</text>
+
+    <!-- Arrow marker definition -->
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#555555"/>
+      </marker>
+    </defs>
+  </g>
+</svg>
