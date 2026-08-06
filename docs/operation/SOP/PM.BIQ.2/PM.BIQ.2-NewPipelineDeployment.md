@@ -3,34 +3,33 @@
 - Version: 1.0
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
-
 There may be times where we need to create a new CWL workflow for our BCLConvert InterOp QC pipeline.
 
 In the SOP below we discuss the following scenarios:
-* User wants to tinker with some parameters in the current CWL workflow for testing purposes only.
-* User wants to add a new feature to the pipeline that requires a modification to the current CWL workflow.
-* User wants to make a new release of the edited CWL workflow for production use.
+
+- User wants to tinker with some parameters in the current CWL workflow for testing purposes only.
+- User wants to add a new feature to the pipeline that requires a modification to the current CWL workflow.
+- User wants to make a new release of the edited CWL workflow for production use.
 
 Throughout the SOP we make the following expectations:
-* User is familiar with UMCCR's [cwl-ica repository][cwl_ica_repo] and has a working knowledge of CWL.
-* User has access to the ICAv2 platform with at minimum 'Contributor level' permissions in at least one project.
-* User has access to the appropriate AWS Account tied to the ICAv2 project.
 
+- User is familiar with UMCCR's [cwl-ica repository][cwl_ica_repo] and has a working knowledge of CWL.
+- User has access to the ICAv2 platform with at minimum 'Contributor level' permissions in at least one project.
+- User has access to the appropriate AWS Account tied to the ICAv2 project.
 
-- [Pipeline Summary](#pipeline-summary)
-- [Setup](#setup)
+* [Pipeline Summary](#pipeline-summary)
+* [Setup](#setup)
   - [Installing CWL-ICA-CLI](#installing-cwl-ica-cli)
   - [Installing ICAv2 CLI and ICAv2 CLI Plugins](#installing-icav2-cli-and-icav2-cli-plugins)
-- [Development Deployment](#development-deployment)
+* [Development Deployment](#development-deployment)
   - [CWL ZIP](#cwl-zip)
   - [Pipeline Creation](#pipeline-creation)
   - [Running the Pipeline](#running-the-pipeline)
   - [Pipeline Update](#pipeline-update)
-- [Production Deployment](#production-deployment)
+* [Production Deployment](#production-deployment)
   - [GitHub Releases](#github-releases)
   - [Infrastructure Constants Updates](#infrastructure-constants-updates)
   - [Workflow Manager Updates](#workflow-manager-updates)
-
 
 ## Pipeline Summary
 
@@ -95,14 +94,14 @@ Note you will need to manually add in the following into the payload section of 
 
 ```json5
 {
-  "payload": {
-    "version": "<DEFAULT_PAYLOAD_VERSION>",
-    "data": {
-      "engineParameters": {
-        "pipelineId": "<THE PIPELINE ID YOU JUST CREATED>"
-      }
-    }
-  }
+  payload: {
+    version: '<DEFAULT_PAYLOAD_VERSION>',
+    data: {
+      engineParameters: {
+        pipelineId: '<THE PIPELINE ID YOU JUST CREATED>',
+      },
+    },
+  },
 }
 ```
 
@@ -160,7 +159,6 @@ make-new-workflow.sh \
   --codeVersion "$(cd <cwl-ica-repo> && git rev-parse --short=7 HEAD)" \
   --validationState "VALIDATED"
 ```
-
 
 [ica_about]: https://www.illumina.com/products/by-type/informatics-products/connected-analytics.html
 [cwl_user_guide]: https://www.commonwl.org/user_guide/

@@ -3,7 +3,6 @@
 - Version: 1.0
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
-
 Most processes within the BCLConvert InterOp QC Orchestration use AWS Step Functions to manage the workflow.
 We post all Step Function errors to the #alerts-prod slack channel, a Center staff member can
 then click on the offending Step Function link in the slack message to be taken to the AWS Step Functions console to investigate further.
@@ -20,7 +19,6 @@ then click on the offending Step Function link in the slack message to be taken 
 - [Common Pipeline Failures](#common-pipeline-failures)
   - [Sample Filter File Issues](#sample-filter-file-issues)
 
-
 ## Analysis Stuck in DRAFT state
 
 If the analysis is stuck in DRAFT mode, there may be a couple of reasons for this.
@@ -32,18 +30,20 @@ in the production account and look for any RUNNING executions in the 'bclconvert
 The populate draft data state machine collects MultiQC parquet files from FASTQ data associated with the instrument run. If these files haven't been generated yet (e.g. the sequencing run is still in progress or the fastq sync hasn't completed), the state machine will wait.
 
 Possible causes:
-* Sequencing run is still in progress
-* Fastq data hasn't been synced yet
-* MultiQC parquet generation hasn't completed
+
+- Sequencing run is still in progress
+- Fastq data hasn't been synced yet
+- MultiQC parquet generation hasn't completed
 
 Check the Fastq Manager service to confirm the status of the FASTQ data for the instrument run.
 
 ### ECS Task Failure
 
 The ECS task that resamples MultiQC parquet files may fail due to:
-* Insufficient memory for large instrument runs
-* Network connectivity issues
-* Corrupted input parquet files
+
+- Insufficient memory for large instrument runs
+- Network connectivity issues
+- Corrupted input parquet files
 
 Check the ECS task logs in CloudWatch for the specific error message.
 
@@ -71,8 +71,8 @@ The ICAv2 WES manager may fail to create an analysis for any of the following re
 
 This issue is mostly common with new projects. Some common things to confirm:
 
-* Ensure that the ICAv2 Production Service User has been added to the project with the correct permissions.
-* Ensure that the Notifications Channels have been set up correctly for the project.
+- Ensure that the ICAv2 Production Service User has been added to the project with the correct permissions.
+- Ensure that the Notifications Channels have been set up correctly for the project.
 
 Please consult the [project setup SOP][icav2_wes_project_setup_sop] as part of the ICAv2 WES documentation.
 
@@ -102,12 +102,11 @@ use this route to access the data. If this is not possible, the data needs to be
 
 If the pipeline fails with errors related to sample filters:
 
-* Check that the sample filter file was correctly generated and uploaded to S3
-* Verify that all library IDs in the instrument run are valid
-* Check that the cache URI is accessible from the ICAv2 project
+- Check that the sample filter file was correctly generated and uploaded to S3
+- Verify that all library IDs in the instrument run are valid
+- Check that the cache URI is accessible from the ICAv2 project
 
 Review the `write_sample_filters_file` and `add_sample_filters` Lambda logs for more details.
-
 
 [aws_step_functions_console_prod]: https://472057503814.ap-southeast-2.console.aws.amazon.com/states/home?region=ap-southeast-2#/statemachines
 [sop_1_rel_path]: ../PM.BIQ.1/PM.BIQ.1-ManualPipelineExecution.md

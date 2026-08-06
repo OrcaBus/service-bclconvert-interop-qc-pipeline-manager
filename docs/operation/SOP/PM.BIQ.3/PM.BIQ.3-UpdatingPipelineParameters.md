@@ -3,7 +3,6 @@
 - Version: 1.0
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
-
 From time-to-time there may be a requirement to add or subtract pipeline parameters.
 
 The DRAFT payload inputs we supply do not directly map to the pipeline parameters used when running ICAv2.
@@ -13,7 +12,6 @@ This assumes that the [CWL pipeline][cwl_pipeline] has already been updated to s
 - [Draft Event Schema](#draft-event-schema)
 - [Lambda Parameter Mapping](#lambda-parameter-mapping)
 - [Testing](#testing)
-
 
 ## Constants File Update
 
