@@ -281,10 +281,41 @@ def handler(event, context) -> Dict[str, bool]:
     engine_parameters = payload_data.get("engineParameters", {})
 
     # Get the project prefix
-    project_prefix = cast(
-        str,
-        get_s3_key_prefix_by_project_id(engine_parameters.get("projectId"))
-    )
+    project_id = engine_parameters.get("projectId")
+    if project_id is None:
+        add_comment_to_workflow_run(
+            workflow_run_orcabus_id=workflow_run_id,
+            comment=_format_comment_with_arn(
+                "Post schema validation failed: projectId is not set",
+                execution_arn
+            ),
+            author=COMMENT_AUTHOR
+        )
+        return {"isValid": False}
+
+    try:
+        project_prefix = get_s3_key_prefix_by_project_id(project_id)
+    except ApiException:
+        add_comment_to_workflow_run(
+            workflow_run_orcabus_id=workflow_run_id,
+            comment=_format_comment_with_arn(
+                f"Post schema validation failed: cannot resolve S3 key prefix for projectId '{project_id}'",
+                execution_arn
+            ),
+            author=COMMENT_AUTHOR
+        )
+        return {"isValid": False}
+
+    if project_prefix is None:
+        add_comment_to_workflow_run(
+            workflow_run_orcabus_id=workflow_run_id,
+            comment=_format_comment_with_arn(
+                f"Post schema validation failed: no S3 key prefix configured for projectId '{project_id}'",
+                execution_arn
+            ),
+            author=COMMENT_AUTHOR
+        )
+        return {"isValid": False}
 
     # Validate engine parameters
     is_valid, comment = validate_engine_parameters(
@@ -298,7 +329,7 @@ def handler(event, context) -> Dict[str, bool]:
         inputs = payload_data.get("inputs", {})
         is_valid, comment = validate_inputs(
             inputs,
-            project_id=engine_parameters.get("projectId"),
+            project_id=project_id,
             project_prefix=project_prefix,
         )
 
