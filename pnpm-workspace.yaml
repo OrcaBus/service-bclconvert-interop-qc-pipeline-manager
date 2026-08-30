@@ -6,6 +6,7 @@ minimumReleaseAgeExclude:
   - js-yaml@3.15.0
   - '@babel/core@7.29.1'
   - brace-expansion@1.1.16 || 1.1.17 || 1.1.18
+  - '@orcabus/platform-cdk-constructs@1.9.3'
 overrides:
   '@babel/core@<=7.29.0': ^7.29.1
   brace-expansion@<1.1.16: ^1.1.16
