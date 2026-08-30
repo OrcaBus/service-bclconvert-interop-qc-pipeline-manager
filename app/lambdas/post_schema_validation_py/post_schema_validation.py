@@ -155,7 +155,10 @@ def validate_inputs(
     1. Filemanager existence check — confirms file/folder URIs exist at the S3 level
        (excludes reference data bucket URIs since they are not indexed by the Filemanager)
     2. ICA project context check — confirms URIs outside of ref/test/project-prefix
-       are linked to the project
+       are linked to the project. The multiqc parquet QC files are exempt from this
+       check because they are only copied into the project's cache directory between
+       the READY and ICAv2 WES events, so they are not yet linked to the project at
+       validation time.
 
     For bclconvert-interop-qc, the input URIs come from:
     - additionalMultiQcDataFiles[].multiqcParquetFileUri (S3 URIs)
@@ -208,13 +211,27 @@ def validate_inputs(
                 )
 
     # Phase 2: ICA project context validation
-    # Only URIs outside ref/test/project-prefix need ICA project linking confirmed
+    # Only URIs outside ref/test/project-prefix need ICA project linking confirmed.
+    #
+    # NOTE: The multiqc parquet QC files are intentionally exempt from the project
+    # context check. These files live in their original (upstream) location at READY
+    # time and are only copied — with edits applied — into the cache directory between
+    # the READY and ICAv2 WES events. As a result they are legitimately not linked to
+    # the ICA project at validation time, so requiring them to sit in the project URI
+    # would incorrectly fail otherwise-valid runs. Phase 1 (existence check above) still
+    # confirms the files exist, so we only relax the project-context requirement here.
+    multiqc_parquet_uris = set(
+        multiqc_obj.get("multiqcParquetFileUri")
+        for multiqc_obj in inputs.get("additionalMultiQcDataFiles", [])
+        if multiqc_obj.get("multiqcParquetFileUri")
+    )
     uris_to_validate = [
         uri for uri in data_uris
         if not (
             uri.startswith(f"s3://{REF_DATA_BUCKET}/") or
             uri.startswith(f"s3://{TEST_BUCKET}/") or
-            uri.startswith(project_prefix)
+            uri.startswith(project_prefix) or
+            uri in multiqc_parquet_uris
         )
     ]
 
