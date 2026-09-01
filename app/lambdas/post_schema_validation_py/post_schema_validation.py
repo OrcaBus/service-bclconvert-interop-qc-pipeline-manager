@@ -9,7 +9,7 @@ Validates:
 """
 
 # Imports
-from typing import Dict, Tuple, List, cast
+from typing import Dict, Tuple, List
 import logging
 from os import environ
 from time import sleep
@@ -41,7 +41,7 @@ WORKFLOW_NAME = environ[WORKFLOW_NAME_ENV_VAR]
 COMMENT_AUTHOR = f"{WORKFLOW_NAME}-post-schema-validation-service"
 
 # Midfixes
-ANALYSIS_MIDFIX = "analysis"
+ANALYSIS_MIDFIXES = ["analysis", "output", "outputs"]
 LOGS_MIDFIX = "logs"
 
 logger = logging.getLogger()
@@ -70,7 +70,7 @@ def validate_engine_parameters(
         engine_parameters: Dict,
         workflow_run_id: str,
         project_prefix: str,
-) -> Tuple[bool, str]:
+) -> Tuple[bool, List[str]]:
     """
     Validate the engine parameters.
 
@@ -86,68 +86,79 @@ def validate_engine_parameters(
     :param engine_parameters: The engine parameters to validate.
     :param workflow_run_id: The workflow run ID (orcabusId)
     :param project_prefix: The project S3 prefix
-    :return: A tuple of (is_valid, comment)
+    :return: A tuple of (is_valid, list of failure comments)
     """
-    project_id = cast(str, engine_parameters.get("projectId"))
+    failures: List[str] = []
+
+    # Get the project id
+    project_id = engine_parameters.get("projectId")
+
+    # Assert project id is set and resolves to a valid ICAv2 project
+    if project_id is None:
+        failures.append("projectId is not set")
+        return False, failures
+    try:
+        get_project_obj_from_project_id(project_id)
+    except ApiException:
+        failures.append(f"Cannot find project id {project_id}")
+        return False, failures
+
+    # Get URIs
     output_uri = engine_parameters.get("outputUri", "")
     logs_uri = engine_parameters.get("logsUri", "")
     cache_uri = engine_parameters.get("cacheUri", "")
     pipeline_id = engine_parameters.get("pipelineId", "")
 
-    # Validate projectId
-    if project_id is None:
-        return False, "projectId is not set"
-    try:
-        get_project_obj_from_project_id(project_id)
-    except ApiException:
-        return False, f"Cannot find project id {project_id}"
-
-    # Validate outputUri is within project context
+    # Validate the URIs start with the project prefix
     if not output_uri.startswith(project_prefix):
-        return False, f"outputUri '{output_uri}' is not in the project context '{project_prefix}'"
-
-    # Validate logsUri is within project context
+        failures.append(f"outputUri '{output_uri}' is not in the project context '{project_prefix}'")
     if not logs_uri.startswith(project_prefix):
-        return False, f"logsUri '{logs_uri}' is not in the project context '{project_prefix}'"
-
-    # Validate cacheUri is within project context
+        failures.append(f"logsUri '{logs_uri}' is not in the project context '{project_prefix}'")
     if cache_uri and not cache_uri.startswith(project_prefix):
-        return False, f"cacheUri '{cache_uri}' is not in the project context '{project_prefix}'"
+        failures.append(f"cacheUri '{cache_uri}' is not in the project context '{project_prefix}'")
 
-    # Validate pipelineId is accessible in the project
+    # Get the portal run id from the workflow run id
+    portal_run_id = get_workflow_run(workflow_run_id)['portalRunId']
+
+    # Validate outputUri ends with /<analysis-midfix>/<workflow-name>/<portal-run-id>/
+    output_uri_valid = any(
+        output_uri.endswith(f"/{midfix}/{WORKFLOW_NAME}/{portal_run_id}/")
+        for midfix in ANALYSIS_MIDFIXES
+    )
+    if not output_uri_valid:
+        valid_suffixes = ", ".join(
+            f"/{midfix}/{WORKFLOW_NAME}/{portal_run_id}/" for midfix in ANALYSIS_MIDFIXES
+        )
+        failures.append(
+            f"outputUri '{output_uri}' does not end with a valid suffix. "
+            f"Expected one of: {valid_suffixes}"
+        )
+
+    # Validate logsUri ends with /logs/<workflow-name>/<portal-run-id>/
+    if not logs_uri.endswith(f"/{LOGS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/"):
+        failures.append(
+            f"logsUri '{logs_uri}' does not end with '/{LOGS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/'"
+        )
+
+    # Confirm the pipeline is accessible in the project
     try:
         _ = get_project_pipeline_obj(
             project_id=project_id,
             pipeline_id=pipeline_id,
         )
     except ValueError:
-        return False, f"The pipeline {pipeline_id} cannot be found in the project {project_id}"
+        failures.append(f"The pipeline {pipeline_id} cannot be found in the project {project_id}")
 
-    # Get the portal run id from the workflow run id
-    portal_run_id = get_workflow_run(workflow_run_id)['portalRunId']
-
-    # Validate outputUri ends with /<analysis-midfix>/<workflow-name>/<portal-run-id>/
-    if not output_uri.endswith(f"/{ANALYSIS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/"):
-        return False, (
-            f"outputUri '{output_uri}' does not end with "
-            f"'/{ANALYSIS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/'"
-        )
-
-    # Validate logsUri ends with /logs/<workflow-name>/<portal-run-id>/
-    if not logs_uri.endswith(f"/{LOGS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/"):
-        return False, (
-            f"logsUri '{logs_uri}' does not end with "
-            f"'/{LOGS_MIDFIX}/{WORKFLOW_NAME}/{portal_run_id}/'"
-        )
-
-    return True, ""
+    if failures:
+        return False, failures
+    return True, []
 
 
 def validate_inputs(
         inputs: Dict,
         project_id: str,
         project_prefix: str,
-) -> Tuple[bool, str]:
+) -> Tuple[bool, List[str]]:
     """
     Validate the inputs.
 
@@ -168,8 +179,10 @@ def validate_inputs(
     :param inputs: The inputs to validate.
     :param project_id: The ICAv2 project id to validate against.
     :param project_prefix: The ICAv2 project prefix
-    :return: A tuple of (is_valid, comment)
+    :return: A tuple of (is_valid, list of failure comments)
     """
+    failures: List[str] = []
+
     # Collect all S3 data URIs from inputs
     data_uris: List[str] = []
 
@@ -181,7 +194,7 @@ def validate_inputs(
 
     # If there are no data URIs to validate, return valid
     if not data_uris:
-        return True, ""
+        return True, []
 
     # Phase 1: Filemanager existence check — ALL URIs except refdata bucket
     non_reference_data_uris = list(filter(
@@ -196,7 +209,7 @@ def validate_inputs(
             if not (
                 len(list_files_recursively(bucket, key)) > 0
             ):
-                return False, (
+                failures.append(
                     f"Folder URI '{data_uri}' has no files found under "
                     f"that prefix in the Filemanager"
                 )
@@ -205,10 +218,14 @@ def validate_inputs(
             try:
                 get_s3_object_id_from_s3_uri(data_uri)
             except S3FileNotFoundError:
-                return False, (
+                failures.append(
                     f"Data URI '{data_uri}' cannot be found by the Filemanager, "
                     f"are you sure it exists?"
                 )
+
+    # If Filemanager checks failed, return early
+    if failures:
+        return False, failures
 
     # Phase 2: ICA project context validation
     # Only URIs outside ref/test/project-prefix need ICA project linking confirmed.
@@ -242,10 +259,11 @@ def validate_inputs(
                 data_id_or_uri=data_uri,
             )
         except ValueError:
-            return False, (
+            failures.append(
                 f"Data URI '{data_uri}' cannot be found in the "
                 f"project context '{project_id}'"
             )
+            continue
 
         try:
             get_project_data_obj_by_id(
@@ -253,12 +271,14 @@ def validate_inputs(
                 data_id=project_data_obj.data.id
             )
         except ApiException:
-            return False, (
+            failures.append(
                 f"Data URI '{data_uri}' cannot be found in the "
                 f"project context '{project_id}'"
             )
 
-    return True, ""
+    if failures:
+        return False, failures
+    return True, []
 
 
 def handler(event, context) -> Dict[str, bool]:
@@ -334,61 +354,63 @@ def handler(event, context) -> Dict[str, bool]:
         )
         return {"isValid": False}
 
-    # Validate engine parameters
-    is_valid, comment = validate_engine_parameters(
+    # Collect all failures
+    all_failures: List[str] = []
+
+    # Validate the engine parameters
+    is_valid, failures = validate_engine_parameters(
         engine_parameters,
         workflow_run_id=workflow_run_id,
         project_prefix=project_prefix,
     )
+    all_failures.extend(failures)
 
-    # Validate inputs if engine parameters are valid
+    # Validate the inputs (only if engine params are valid — we need project context)
     if is_valid:
         inputs = payload_data.get("inputs", {})
-        is_valid, comment = validate_inputs(
+        is_valid, failures = validate_inputs(
             inputs,
             project_id=project_id,
             project_prefix=project_prefix,
         )
+        all_failures.extend(failures)
 
-    # Handle validation failure
-    if not is_valid:
-        if isinstance(comment, list) and len(comment) == 1:
-            comment = comment[0]
-        if isinstance(comment, list):
+    # Write failure comments
+    if all_failures:
+        if len(all_failures) == 1:
             add_comment_to_workflow_run(
                 workflow_run_orcabus_id=workflow_run_id,
                 comment=_format_comment_with_arn(
-                    f"Post schema validation failed for {len(comment)} reasons",
+                    f"Post schema validation failed: {all_failures[0]}",
                     execution_arn
                 ),
                 author=COMMENT_AUTHOR
             )
-            for idx, comment_iter in enumerate(comment, start=1):
+        else:
+            # Write a summary comment
+            add_comment_to_workflow_run(
+                workflow_run_orcabus_id=workflow_run_id,
+                comment=_format_comment_with_arn(
+                    f"Post schema validation failed for {len(all_failures)} reasons",
+                    execution_arn
+                ),
+                author=COMMENT_AUTHOR
+            )
+            # Write each failure as a separate numbered comment
+            for idx, failure in enumerate(all_failures, start=1):
                 add_comment_to_workflow_run(
                     workflow_run_orcabus_id=workflow_run_id,
                     comment=_format_comment_with_arn(
-                        f"Reason {idx} of {len(comment)}: {comment_iter}",
+                        f"Reason {idx} of {len(all_failures)}: {failure}",
                         execution_arn
                     ),
                     author=COMMENT_AUTHOR
                 )
                 sleep(1)
-        else:
-            add_comment_to_workflow_run(
-                workflow_run_orcabus_id=workflow_run_id,
-                comment=_format_comment_with_arn(
-                    f"Post schema validation failed: {comment}",
-                    execution_arn
-                ),
-                author=COMMENT_AUTHOR
-            )
-        return {
-            "isValid": False
-        }
 
-    return {
-        "isValid": True
-    }
+        return {"isValid": False}
+
+    return {"isValid": True}
 
 
 # if __name__ == "__main__":
