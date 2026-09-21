@@ -74,7 +74,7 @@
                           "Next": "Jitter ecs task",
                           "Assign": {
                             "multiqcParquetFileUriMapIter": "{% $states.input %}",
-                            "outputUriMapIter": "{% $cacheUriMapIter & $states.input.fastqId & '/' & 'multiqc.parquet' %}"
+                            "outputUriMapIter": "{% $states.input.tool ? $cacheUriMapIter & $states.input.fastqId & '/' $states.input.tool & '/' & 'multiqc.parquet' :  $cacheUriMapIter & $states.input.fastqId & '/' & 'multiqc.parquet' %}"
                           }
                         },
                         "Jitter ecs task": {
