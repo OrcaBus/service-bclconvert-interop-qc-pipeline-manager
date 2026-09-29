@@ -407,7 +407,7 @@
                     ],
                     "End": true,
                     "Output": {
-                      "multiqcOutputObject": "{% $states.result.Payload.multiqcOutputObject %}"
+                      "multiqcOutputObjects": "{% $states.result.Payload.multiqcOutputObjects %}"
                     }
                   }
                 }
@@ -422,7 +422,7 @@
               },
               "Items": "{% $states.input.fastqIdList %}",
               "Output": {
-                "additionalMultiQcDataFiles": "{% [ $states.result.(multiqcOutputObject) ] %}"
+                "additionalMultiQcDataFiles": "{% [ [ $states.result.(multiqcOutputObjects) ] ~> $reduce($append) ] %}"
               },
               "Next": "Get BSSH Fastq Copy output"
             },

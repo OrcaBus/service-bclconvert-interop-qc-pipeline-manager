@@ -12,6 +12,8 @@ Given a list of fastq ids, return a list containing the following properties
 """
 
 # Layer imports
+from functools import reduce
+from operator import concat
 from orcabus_api_tools.fastq import get_fastq
 
 
@@ -36,13 +38,29 @@ def handler(event, context):
 
     # Return the response with the desired properties
     return {
-        "multiqcOutputObject": list(map(
-            lambda fastq_obj_iter_: {
-                "fastqId": fastq_obj_iter_['id'],
-                "libraryId": fastq_obj_iter_['library']['libraryId'],
-                "lane": fastq_obj_iter_['lane'],
-                "multiqcParquetFileUri": fastq_obj_iter_['qc']['sequaliReports']['multiqcParquet']['s3Uri']
-            },
-            fastq_objs
+        "multiqcOutputObjects": list(filter(
+            lambda fastq_parquet_iter_: fastq_parquet_iter_['multiqcParquetFileUri'] is not None,
+            list(reduce(
+                concat,
+                list(map(
+                    lambda fastq_obj_iter_: [
+                        {
+                            "fastqId": fastq_obj_iter_['id'],
+                            "libraryId": fastq_obj_iter_['library']['libraryId'],
+                            "lane": fastq_obj_iter_['lane'],
+                            "multiqcParquetFileUri": fastq_obj_iter_['qc']['sequaliReports']['multiqcParquet']['s3Uri'],
+                            "tool": "sequali"
+                        },
+                        {
+                            "fastqId": fastq_obj_iter_['id'],
+                            "libraryId": fastq_obj_iter_['library']['libraryId'],
+                            "lane": fastq_obj_iter_['lane'],
+                            "multiqcParquetFileUri": fastq_obj_iter_['qc'].get('picard', {}).get('multiqcParquet', {}).get('s3Uri', None),
+                            "tool": "picard"
+                        }
+                    ],
+                    fastq_objs
+                ))
+            ))
         ))
     }

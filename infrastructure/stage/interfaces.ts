@@ -39,7 +39,7 @@ export interface StatelessApplicationStackConfig {
   icav2AccessTokenSecretId: string;
 }
 
-export type PayloadVersionType = '2025.05.29' | '2026.04.01';
+export type PayloadVersionType = '2025.05.29' | '2026.04.01' | '2026.09.18';
 export type WorkflowVersionType = '1.3.1--1.25.2' | '1.5.0--1.31' | '1.9.0--1.33';
 
 export const payloadVersionList: PayloadVersionType[] = ['2025.05.29', '2026.04.01'];
