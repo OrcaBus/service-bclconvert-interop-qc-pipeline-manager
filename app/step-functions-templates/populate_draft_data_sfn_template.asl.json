@@ -471,7 +471,7 @@
         }
       ],
       "Assign": {
-        "inputs": "{% [\n  /* Force the instrument run id value from the tags */\n  {\n    \"instrumentRunId\": $tags.instrumentRunId\n  },\n  /* Then add in the draft inputs */\n  $inputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
+        "inputs": "{% [\n  /* Force the instrument run id and sequence run id values from the tags */\n  {\n    \"instrumentRunId\": $tags.instrumentRunId,\n    \"sequenceRunId\": $tags.sequenceRunId\n  },\n  /* Then add in the draft inputs */\n  $inputs,\n  /* Add in the merged results */\n  (\n    $states.result ~> $merge\n  )\n] ~> \n/* Merge this all together */\n$merge %}"
       }
     },
     "Add sample filters csv": {
@@ -497,7 +497,8 @@
               "Arguments": {
                 "FunctionName": "${__add_sample_filters_lambda_function_arn__}",
                 "Payload": {
-                  "instrumentRunId": "{% $inputs.instrumentRunId ? $inputs.instrumentRunId : $tags.instrumentRunId %}"
+                  "instrumentRunId": "{% $inputs.instrumentRunId ? $inputs.instrumentRunId : $tags.instrumentRunId %}",
+                  "sequenceRunId": "{% $inputs.sequenceRunId ? $inputs.sequenceRunId : $tags.sequenceRunId %}"
                 }
               },
               "Retry": [

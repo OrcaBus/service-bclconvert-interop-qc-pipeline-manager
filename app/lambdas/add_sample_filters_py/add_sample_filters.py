@@ -27,7 +27,7 @@ from typing import List
 import pandas as pd
 
 # Layer imports
-from orcabus_api_tools.sequence import get_libraries_from_instrument_run_id
+from orcabus_api_tools.sequence import get_library_id_list_from_instrument_run_id
 from orcabus_api_tools.metadata import get_libraries_list_from_library_id_list
 from orcabus_api_tools.fastq import get_fastqs_in_libraries_and_instrument_run_id
 
@@ -35,12 +35,16 @@ from orcabus_api_tools.fastq import get_fastqs_in_libraries_and_instrument_run_i
 def handler(event, context):
     # Get the instrument run id as the input
     instrument_run_id = event.get("instrumentRunId")
+    sequence_run_id = event.get("sequenceRunId")
 
     # Initialise the outputs
     sample_filters_json = []
 
     # Get library ids from the instrument run id
-    library_id_list = get_libraries_from_instrument_run_id(instrument_run_id)
+    library_id_list = get_library_id_list_from_instrument_run_id(
+        instrument_run_id=instrument_run_id,
+        sequence_run_id=sequence_run_id,
+    )
 
     # Get the lane ids
     lane_list: List[int] = sorted(list(set(
