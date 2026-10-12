@@ -12,5 +12,6 @@ export default defineConfig([
     'cdk.out/',
     'node_modules/*',
     'app/*', // App folder should have its own eslint config
+    '.venv/',
   ]),
 ]);
