@@ -27,3 +27,5 @@ auditConfig:
     # Patched in 1.1.4 (unreleased). Remove this exception when 1.1.4 ships and
     # add `sprintf-js@<=1.1.3: ^1.1.4` back to overrides above.
     - GHSA-hp3w-g68c-fv3c
+    # Deepmerge
+    - GHSA-gcqx-w48m-w2h4
